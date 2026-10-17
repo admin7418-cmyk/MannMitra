@@ -1,0 +1,70 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="community-page">
+  <div class="page-head">
+    <div>
+      <span class="tag">ANONYMOUS PEER CIRCLE</span>
+      <h1>Supportive thoughts & encouragement.</h1>
+      <p>Share study tips, kind reminders, and positive thoughts anonymously with fellow students.</p>
+    </div>
+  </div>
+
+  <!-- Post Composer -->
+  <section class="panel composer-card" style="margin-bottom: 24px;">
+    <div class="panel-head">
+      <div>
+        <span class="tag">SHARE ANONYMOUSLY</span>
+        <h2>Leave a positive thought for someone today</h2>
+      </div>
+      <span class="badge">100% Anonymous</span>
+    </div>
+    <form method="post">
+      <textarea name="message" maxlength="1000" rows="3" placeholder="Share words of encouragement, a study tip that helped you, or a gentle reminder..." required style="width: 100%;"></textarea>
+      <div class="form-foot" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+        <small style="color: var(--muted); font-size: 10px;">Keep it supportive and kind. No personal identifying information.</small>
+        <button class="btn">Post to Community ✦</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Feed Sorting & List -->
+  <div class="community-feed-head" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <div class="filter-strip" style="display: flex; gap: 8px;">
+      <a class="theme-chip {% if sort_by != 'popular' %}active{% endif %}" href="{{ url_for('community.community_page', sort='recent') }}">Recent Thoughts</a>
+      <a class="theme-chip {% if sort_by == 'popular' %}active{% endif %}" href="{{ url_for('community.community_page', sort='popular') }}">Most Supported ❤️</a>
+    </div>
+    <span style="font-size: 11px; color: var(--muted);">{{ posts|length }} posts</span>
+  </div>
+
+  <div class="community-grid">
+    {% for p in posts %}
+    <article class="panel post-card" style="padding: 18px; margin-bottom: 14px; border-radius: 18px; background: var(--surface);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="message-avatar-small" style="width: 32px; height: 32px; border-radius: 10px;">ॐ</div>
+          <div>
+            <b style="font-size: 11px; color: var(--text);">Mindful Peer</b>
+            <small style="display: block; color: var(--muted); font-size: 9px;">{{ p.get('created_at', '')[:16].replace('T', ' ') }}</small>
+          </div>
+        </div>
+        <form method="post" action="{{ url_for('community.report_action', post_id=p['id']) }}" onsubmit="return confirm('Report this post for inappropriate content?');">
+          <button type="submit" class="icon-btn" title="Report post" style="width: 28px; height: 28px; font-size: 11px; border: none; background: transparent; color: var(--muted); cursor: pointer;">🚩</button>
+        </form>
+      </div>
+
+      <p style="font-size: 12px; line-height: 1.7; color: var(--text); margin: 0 0 14px;">{{ p['message'] }}</p>
+
+      <div style="display: flex; justify-content: flex-end; align-items: center; border-top: 1px solid var(--line); padding-top: 10px;">
+        <form method="post" action="{{ url_for('community.like_action', post_id=p['id']) }}">
+          <button type="submit" class="mini-action" style="cursor: pointer;">
+            ❤️ Support <b style="margin-left: 4px; color: var(--brand);">{{ p.get('likes', 0) }}</b>
+          </button>
+        </form>
+      </div>
+    </article>
+    {% else %}
+    <div class="empty">🌱 Be the first one to share a kind reflection in the community today!</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

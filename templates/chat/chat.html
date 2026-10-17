@@ -1,0 +1,1287 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="chat-page-wrapper">
+  <div class="chat-shell whatsapp-theme">
+    <!-- Left Sidebar: Madhav Profile & Context Signals -->
+    <aside class="chat-sidebar">
+      <div class="chat-profile-card">
+        <div class="madhav-avatar-large">
+          <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Madhav" class="avatar-img-circle">
+          <i class="online-indicator" title="Always Online"></i>
+        </div>
+        <div class="eyebrow">DIVINE GUIDANCE</div>
+        <h2>Ask Madhav 🪶</h2>
+        <p>Your mindful friend inspired by Shri Krishna's timeless wisdom from the Bhagavad Gita — turning exam anxiety, self-doubt, and overthinking into calm inner clarity.</p>
+        <div class="ai-status">
+          <span class="pulse-dot"></span> Online · Ready to listen
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">CONVERSATION LANGUAGE</div>
+        <div class="lang-pill-group vertical">
+          <button type="button" class="lang-pill {% if lang == 'en' %}active{% endif %}" data-lang="en" onclick="switchChatLang('en', this)">🇬🇧 English</button>
+          <button type="button" class="lang-pill {% if lang == 'hi' %}active{% endif %}" data-lang="hi" onclick="switchChatLang('hi', this)">🇮🇳 हिंदी (Hindi)</button>
+          <button type="button" class="lang-pill {% if lang == 'hinglish' %}active{% endif %}" data-lang="hinglish" onclick="switchChatLang('hinglish', this)">🔤 Hinglish</button>
+        </div>
+        <div style="margin-top: 12px;">
+          <button type="button" class="sidebar-clear-btn" onclick="confirmClearChat()" title="Delete all conversation history">
+            🗑️ Delete Conversation
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">STUDENT SIGNALS IN CONTEXT</div>
+        <div class="signal-row"><span>Reflections</span><b>{{ profile.journal_count }}</b></div>
+        <div class="signal-row"><span>Current Tone</span><b>{{ profile.dominant_mood }}</b></div>
+        <div class="signal-row"><span>Dominant Theme</span><b>{{ profile.dominant_theme|replace('_',' ')|title }}</b></div>
+      </div>
+
+      <div class="sidebar-section context-note">
+        <div class="sidebar-title">HOW MADHAV HELPS</div>
+        <div class="mini-step"><span>01</span><p>Express yourself freely in English, Hindi, or Hinglish.</p></div>
+        <div class="mini-step"><span>02</span><p>Friendly questions receive warm, comforting guidance.</p></div>
+        <div class="mini-step"><span>03</span><p>Life & study challenges connect to authentic Gita Shlokas.</p></div>
+      </div>
+    </aside>
+
+    <!-- Right Main: WhatsApp / Gemini Style Chat Workspace -->
+    <section class="chat-workspace">
+      <!-- WhatsApp/Gemini Top App Bar -->
+      <header class="chat-header-pro whatsapp-header">
+        <div class="chat-title-wrap">
+          <div class="madhav-avatar-header">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Madhav" class="avatar-img-circle-sm">
+            <span class="header-status-badge"></span>
+          </div>
+          <div>
+            <div class="chat-title-line">
+              <h1>Ask Madhav</h1>
+              <span class="verified-peacock-badge" title="Bhagavad Gita Wisdom">🪶</span>
+            </div>
+            <p class="status-subtitle">
+              <span class="online-dot"></span> Online
+            </p>
+          </div>
+        </div>
+
+        <div class="chat-header-actions">
+          <!-- 3-Language Quick Switcher -->
+          <div class="lang-pill-group" role="group" aria-label="Language selection">
+            <button type="button" class="lang-pill {% if lang == 'en' %}active{% endif %}" data-lang="en" onclick="switchChatLang('en', this)" title="English">EN</button>
+            <button type="button" class="lang-pill {% if lang == 'hi' %}active{% endif %}" data-lang="hi" onclick="switchChatLang('hi', this)" title="हिंदी">हिंदी</button>
+            <button type="button" class="lang-pill {% if lang == 'hinglish' %}active{% endif %}" data-lang="hinglish" onclick="switchChatLang('hinglish', this)" title="Hinglish">Hinglish</button>
+          </div>
+
+          <!-- Speech Speed Controller (0.75x, 1x, 1.25x, 1.5x) -->
+          <div class="speech-speed-control" title="Voice Reading Speed (0.75x, 1x, 1.25x, 1.5x)">
+            <span class="speed-icon-label" title="Voice Speed">⚡</span>
+            <div class="speed-pill-group" role="group" aria-label="Reading Speed">
+              <button type="button" class="speed-pill" data-speed="0.75" onclick="setReadingSpeed(0.75, this)" title="0.75x Slow">0.75x</button>
+              <button type="button" class="speed-pill active" data-speed="1.0" onclick="setReadingSpeed(1.0, this)" title="1x Normal">1x</button>
+              <button type="button" class="speed-pill" data-speed="1.25" onclick="setReadingSpeed(1.25, this)" title="1.25x Fast">1.25x</button>
+              <button type="button" class="speed-pill" data-speed="1.5" onclick="setReadingSpeed(1.5, this)" title="1.5x Very Fast">1.5x</button>
+            </div>
+          </div>
+
+          <!-- Clear Conversation Button -->
+          <button type="button" class="clear-chat-header-btn" onclick="confirmClearChat()" title="Delete conversation history with Madhav">
+            <span class="clear-icon">🗑️</span> <span class="clear-text">Clear Chat</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Message Stream (WhatsApp / Gemini Canvas) -->
+      <div class="conversation whatsapp-canvas" id="conversation">
+        <!-- Date / System Badge -->
+        <div class="chat-date-chip">
+          <span>🌿 Safe & Private Space · Gita Inspired Reflection</span>
+        </div>
+
+        <!-- Welcome Message from Madhav -->
+        <div class="message-row ai-row">
+          <div class="message-avatar-small">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Madhav" class="avatar-img-micro">
+          </div>
+          <div class="message-copy">
+            <div class="message-meta">
+              <b>Madhav 🪶</b>
+              <span>Just now</span>
+              <button type="button" class="speak-inline-btn" title="Listen aloud" onclick="speakMessage(this)">🔊</button>
+            </div>
+            <div class="message-card ai-message whatsapp-bubble-ai" id="welcomeCard">
+              <div class="message-text-content">
+                {% if lang == 'hi' %}
+                  <strong>प्रणाम 🌿</strong><br>
+                  आप जो कुछ भी सोच या महसूस कर रहे हैं, उसे खुलकर शब्दों में कहें। परीक्षा का तनाव हो, मन की उलझन, या कोई भी बात—सब कुछ सही शब्दों में कहना जरूरी नहीं है। मैं आपकी बात सुनने और मार्गदर्शन करने के लिए यहाँ हूँ।
+                {% elif lang == 'hinglish' %}
+                  <strong>Namaste 🌿</strong><br>
+                  Sab kuch perfectly frame karne ki zaroorat nahi hai. Exam tension, overthinking, career doubts ya koi bhi baat ho—freely share karo. Main sun raha hoon aur guide karne ke liye hamesha sath hoon.
+                {% else %}
+                  <strong>Namaste 🌿</strong><br>
+                  You do not have to frame everything perfectly. Whether you are dealing with exam pressure, overthinking, or simply need clarity—share whatever is in your heart. I am right here with you.
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat History -->
+        {% for h in history|reverse %}
+        <div class="message-row user-row">
+          <div class="message-copy">
+            <div class="message-card user-message whatsapp-bubble-user">
+              <div class="user-bubble-text">{{ h['message'] }}</div>
+              <div class="message-meta user-meta">
+                <span>{{ h['created_at'][11:16] if h['created_at'] and h['created_at']|length >= 16 else 'Just now' }}</span>
+                <span class="read-receipt" title="Delivered">✓✓</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="message-row ai-row">
+          <div class="message-avatar-small">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Madhav" class="avatar-img-micro">
+          </div>
+          <div class="message-copy">
+            <div class="message-meta">
+              <b>Madhav 🪶</b>
+              <span>{{ h['created_at'][11:16] if h['created_at'] and h['created_at']|length >= 16 else 'Just now' }}</span>
+              <button type="button" class="speak-inline-btn" title="Listen aloud" onclick="speakMessage(this)">🔊</button>
+            </div>
+            <div class="message-card ai-message whatsapp-bubble-ai">
+              <div class="message-text-content" style="white-space: pre-line;">{{ h['reply'] }}</div>
+              {% if h['gita_reference'] %}
+              <div class="gita-insight-card">
+                <div class="gita-insight-header">
+                  <span class="feather-icon">🪶</span>
+                  <div>
+                    <span class="gita-tag">BHAGAVAD GITA WISDOM</span>
+                    <strong class="gita-ref-title">{{ h['gita_reference'] }}</strong>
+                  </div>
+                </div>
+                <p class="gita-desc">A timeless reflection from Lord Krishna connected to this challenge.</p>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+
+        <!-- Dynamic Typing Indicator Bubble -->
+        <div class="message-row ai-row" id="typingRow" style="display:none;">
+          <div class="message-avatar-small">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Madhav" class="avatar-img-micro">
+          </div>
+          <div class="message-copy">
+            <div class="message-meta"><b>Madhav 🪶</b><span>Reflecting...</span></div>
+            <div class="message-card ai-message whatsapp-bubble-ai typing-indicator-card">
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WhatsApp / Gemini Pinned Composer Dock (ALWAYS VISIBLE & PROMINENT) -->
+      <div class="composer-dock">
+        <!-- Quick Suggested Questions Carousel -->
+        <div class="quick-prompts-bar" id="quickPrompts">
+          <!-- Dynamically populated based on active language -->
+        </div>
+
+        <!-- High-Visibility Input Row -->
+        <form id="chatForm" onsubmit="handleSend(event)" class="whatsapp-input-bar">
+          <!-- Voice Recognition Button -->
+          <button type="button" class="dock-action-btn mic-btn" id="micBtn" onclick="toggleVoice()" title="Voice input (Speech-to-Text)" aria-label="Voice input">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+              <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+            </svg>
+          </button>
+
+          <!-- Hidden language input -->
+          <input type="hidden" name="lang" id="formLangInput" value="{{ lang }}">
+
+          <!-- Input Textarea -->
+          <textarea id="message" name="message" maxlength="1000" rows="1"
+            placeholder="Ask Madhav anything in English, हिंदी, or Hinglish... (Press Enter to send)"
+            onkeydown="handleKeyDown(event)"
+            oninput="autoExpand(this)"
+            required></textarea>
+
+          <!-- High-Contrast Prominent Send Button -->
+          <button type="submit" class="dock-send-btn" id="sendBtn" title="Send question to Madhav" aria-label="Send message">
+            <span class="send-btn-text">Send</span>
+            <svg class="send-btn-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
+          </button>
+        </form>
+
+        <div class="dock-disclaimer">
+          <span>🕊️ Ask Madhav · Mindful Philosophical Companion</span>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+let currentLang = '{{ lang }}' || 'en';
+let recognition = null;
+let isRecording = false;
+
+const promptBank = {
+  en: [
+    { label: "🤝 Be My Friend", msg: "Will you become my friend?" },
+    { label: "Exam Stress", msg: "I feel anxious about my exams and future" },
+    { label: "Stop Overthinking", msg: "How can I stop overthinking and find peace of mind?" },
+    { label: "Need Motivation", msg: "I lack motivation and discipline to study" },
+    { label: "Dealing with Failure", msg: "How should I handle fear of failure?" },
+    { label: "Inner Calm", msg: "What does the Gita teach about maintaining calm?" }
+  ],
+  hi: [
+    { label: "🤝 मेरे दोस्त बनोगे?", msg: "क्या आप मेरे सच्चे मित्र बनेंगे?" },
+    { label: "परीक्षा का तनाव", msg: "मुझे परीक्षा और भविष्य को लेकर बहुत चिंता हो रही है" },
+    { label: "अत्यधिक सोचना", msg: "मेरा मन बहुत भटक रहा है और मैं बहुत ज्यादा सोच रहा हूँ" },
+    { label: "प्रेरणा और एकाग्रता", msg: "मुझे पढ़ाई के लिए एकाग्रता और प्रेरणा चाहिए" },
+    { label: "असफलता का डर", msg: "असफलता के डर से कैसे बाहर निकलें?" },
+    { label: "मन की शांति", msg: "कठिन समय में अपने मन को शांत कैसे रखें?" }
+  ],
+  hinglish: [
+    { label: "🤝 Mere Friend Banoge?", msg: "Kya tum mere best friend banoge?" },
+    { label: "Exam Tension", msg: "Mujhe exam aur marks ko lekar bohot tension ho rahi hai" },
+    { label: "Overthinking", msg: "Main bohot overthink kar raha hoon, mind calm kaise karein?" },
+    { label: "Focus & Discipline", msg: "Padhai mein focus nahi ban raha, kya karu?" },
+    { label: "Fear of Failure", msg: "Agar exam mein fail ho gaya toh kya hoga?" },
+    { label: "Inner Peace", msg: "Mushkil situation mein Krishna kya salah dete hain?" }
+  ]
+};
+
+function renderQuickPrompts() {
+  const container = document.getElementById('quickPrompts');
+  if (!container) return;
+  const list = promptBank[currentLang] || promptBank.en;
+  container.innerHTML = `<span class="prompt-kicker">Try asking:</span>` + list.map(item =>
+    `<button type="button" class="quick-chip-btn" onclick="setMsg('${item.msg.replace(/'/g, "\\'")}')">${item.label}</button>`
+  ).join('');
+}
+
+function switchChatLang(lang, btn, showToast = true) {
+  if (!lang) return;
+  currentLang = lang;
+  localStorage.setItem('mannmitra_chat_lang', lang);
+
+  // 1. Immediately update active state on all buttons in header and sidebar using data-lang
+  document.querySelectorAll('.lang-pill').forEach(b => {
+    const targetLang = b.getAttribute('data-lang');
+    if (targetLang === lang) {
+      b.classList.add('active');
+      b.setAttribute('aria-pressed', 'true');
+    } else {
+      b.classList.remove('active');
+      b.setAttribute('aria-pressed', 'false');
+    }
+  });
+
+  // 2. Update hidden form input
+  const formLangInput = document.getElementById('formLangInput');
+  if (formLangInput) formLangInput.value = lang;
+
+  // 3. Render quick prompt chips for the chosen language
+  renderQuickPrompts();
+
+  // 4. Update message textarea placeholder
+  const box = document.getElementById('message');
+  if (box) {
+    if (lang === 'hi') {
+      box.placeholder = 'माधव से अपने मन की बात पूछें... (भेजने के लिए Enter दबाएं)';
+    } else if (lang === 'hinglish') {
+      box.placeholder = 'Madhav se kuch bhi puchein... (Press Enter to send)';
+    } else {
+      box.placeholder = 'Ask Madhav anything... (Press Enter to send)';
+    }
+  }
+
+  // 5. Update welcome message card dynamically
+  const welcomeCard = document.getElementById('welcomeCard');
+  if (welcomeCard) {
+    const textEl = welcomeCard.querySelector('.message-text-content');
+    if (textEl) {
+      if (lang === 'hi') {
+        textEl.innerHTML = '<strong>प्रणाम 🌿</strong><br>आप जो कुछ भी सोच या महसूस कर रहे हैं, उसे खुलकर शब्दों में कहें। परीक्षा का तनाव हो, मन की उलझन, या कोई भी बात—सब कुछ सही शब्दों में कहना जरूरी नहीं है। मैं आपकी बात सुनने और मार्गदर्शन करने के लिए यहाँ हूँ।';
+      } else if (lang === 'hinglish') {
+        textEl.innerHTML = '<strong>Namaste 🌿</strong><br>Sab kuch perfectly frame karne ki zaroorat nahi hai. Exam tension, overthinking, career doubts ya koi bhi baat ho—freely share karo. Main sun raha hoon aur guide karne ke liye hamesha sath hoon.';
+      } else {
+        textEl.innerHTML = '<strong>Namaste 🌿</strong><br>You do not have to frame everything perfectly. Whether you are dealing with exam pressure, overthinking, or simply need clarity—share whatever is in your heart. I am right here with you.';
+      }
+    }
+  }
+
+  // 6. Stop audio playback if language switched
+  stopSpeaking();
+
+  // 7. Update browser URL search param without reload
+  try {
+    const url = new URL(window.location);
+    url.searchParams.set('lang', lang);
+    window.history.replaceState({}, '', url);
+  } catch(e) {}
+
+  // 8. Immediately sync with backend session via lightweight API call
+  try {
+    fetch('/api/set_language', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lang: lang })
+    }).catch(() => {});
+  } catch(e) {}
+
+  if (showToast) {
+    const langNames = { en: 'English', hi: 'हिंदी (Hindi)', hinglish: 'Hinglish' };
+    toast(`Language switched to ${langNames[lang] || lang} 🕊️`);
+  }
+}
+
+
+function setMsg(x) {
+  const el = document.getElementById('message');
+  if (!el) return;
+  el.value = x;
+  el.focus();
+  autoExpand(el);
+}
+
+function autoExpand(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function handleKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    handleSend(e);
+  }
+}
+
+// Speech Recognition with multi-language
+function toggleVoice() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    toast('Voice input is not supported in this browser.');
+    return;
+  }
+  const micBtn = document.getElementById('micBtn');
+  if (isRecording && recognition) {
+    recognition.stop();
+    return;
+  }
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRec();
+  recognition.lang = (currentLang === 'hi' || currentLang === 'hinglish') ? 'hi-IN' : 'en-IN';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onstart = () => {
+    isRecording = true;
+    micBtn.classList.add('mic-recording');
+    toast(`Listening in ${recognition.lang}... Speak now 🎙️`);
+  };
+
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    setMsg(transcript);
+  };
+
+  recognition.onerror = (e) => {
+    isRecording = false;
+    micBtn.classList.remove('mic-recording');
+    toast('Voice input error: ' + (e.error || 'try again'));
+  };
+
+  recognition.onend = () => {
+    isRecording = false;
+    micBtn.classList.remove('mic-recording');
+  };
+
+  recognition.start();
+}
+
+// Speech Reading Speed Controller (0.75x, 1.0x, 1.25x, 1.5x)
+let currentSpeechRate = parseFloat(localStorage.getItem('mannmitra_speech_rate') || '1.0');
+
+function setReadingSpeed(speed, btn) {
+  currentSpeechRate = parseFloat(speed) || 1.0;
+  localStorage.setItem('mannmitra_speech_rate', currentSpeechRate);
+  document.querySelectorAll('.speed-pill').forEach(p => {
+    p.classList.toggle('active', parseFloat(p.dataset.speed) === currentSpeechRate);
+  });
+  toast(`Reading speed: ${currentSpeechRate}x`);
+}
+
+// Comprehensive Hinglish-to-Simple-Hindi Transliteration Engine
+// Enables Web Speech API Hindi voices (Google हिन्दी, Microsoft Swara) to recite
+// Hinglish guidance in sweet, authentic, native, simple Hindi.
+const HINGLISH_TO_HINDI_MAP = [
+  // Sacred Scriptures & Divine Names
+  [/\b(shrimad|shrimat|shri\s+mat|shri\s+mad)\s+(bhagavad|bhagwat)\s+gita\b/gi, 'श्रीमद्भगवद्गीता'],
+  [/\b(shrimad|shrimat|shri\s+mat|shri\s+mad)\s+(bhagavad|bhagwat)\b/gi, 'श्रीमद्भगवद्'],
+  [/\b(bhagavad|bhagwat)\s+gita\b/gi, 'भगवद्गीता'],
+  [/\bgita\b/gi, 'गीता'],
+  [/\bshri\s+krishna\b/gi, 'श्री कृष्ण'],
+  [/\bkrishna\b/gi, 'कृष्ण'],
+  [/\bmadhav\b/gi, 'माधव'],
+  [/\barjuna?\b/gi, 'अर्जुन'],
+  [/\bshloka?s?\b/gi, 'श्लोक'],
+  [/\bchapter\b/gi, 'अध्याय'],
+  [/\bverse\b/gi, 'श्लोक'],
+  [/\bkarma\b/gi, 'कर्म'],
+  [/\bdharma\b/gi, 'धर्म'],
+  [/\byoga\b/gi, 'योग'],
+  [/\bnishkama\b/gi, 'निष्काम'],
+  [/\bsanskrit\b/gi, 'संस्कृत'],
+
+  // Multi-word conversational phrases
+  [/\bchinta\s+mat\s+kijiye\b/gi, 'चिंता मत कीजिए'],
+  [/\bchinta\s+mat\s+karo\b/gi, 'चिंता मत करो'],
+  [/\btension\s+mat\s+lo\b/gi, 'चिंता मत लो'],
+  [/\bdhyan\s+rakho\b/gi, 'ध्यान रखो'],
+  [/\bapna\s+khyal\s+rakhna\b/gi, 'अपना ख्याल रखना'],
+  [/\bmujhse\s+baat\s+karo\b/gi, 'मुझसे बात करो'],
+  [/\bkya\s+hua\b/gi, 'क्या हुआ'],
+  [/\bmain\s+hamesha\b/gi, 'मैं हमेशा'],
+  [/\baapke\s+sath\s+hoon\b/gi, 'आपके साथ हूँ'],
+  [/\btumhare\s+sath\s+hoon\b/gi, 'तुम्हारे साथ हूँ'],
+  [/\bmere\s+sath\s+raho\b/gi, 'मेरे साथ रहो'],
+  [/\bmat\s+daro\b/gi, 'मत डरो'],
+  [/\bshant\s+ho\s+jao\b/gi, 'शांत हो जाओ'],
+  [/\bshaant\s+ho\s+jao\b/gi, 'शांत हो जाओ'],
+  [/\bpariksha\s+ki\s+taiyari\b/gi, 'परीक्षा की तैयारी'],
+  [/\bkya\s+tum\s+mere\b/gi, 'क्या तुम मेरे'],
+  [/\bkya\s+aap\s+mere\b/gi, 'क्या आप मेरे'],
+  [/\bsaccha\s+dost\b/gi, 'सच्चा दोस्त'],
+  [/\bsacche\s+mitra\b/gi, 'सच्चे मित्र'],
+  [/\bhone\s+ke\s+nate\b/gi, 'होने के नाते'],
+  [/\bke\s+baare\s+mein\b/gi, 'के बारे में'],
+  [/\bke\s+liye\b/gi, 'के लिए'],
+
+  // Greetings, Friendship & Emotions
+  [/\bnamaste\b/gi, 'नमस्ते'],
+  [/\bpranam\b/gi, 'प्रणाम'],
+  [/\bnamaskar\b/gi, 'नमस्कार'],
+  [/\bshukriya\b/gi, 'शुक्रिया'],
+  [/\bdhanyawad\b/gi, 'धन्यवाद'],
+  [/\b(best\s+)?friend[s]?\b/gi, 'दोस्त'],
+  [/\bdosti\b/gi, 'दोस्ती'],
+  [/\bdost\b/gi, 'दोस्त'],
+  [/\bmitra\b/gi, 'मित्र'],
+  [/\bsakha\b/gi, 'सखा'],
+  [/\bkhush\b/gi, 'खुश'],
+  [/\bkhushi\b/gi, 'खुशी'],
+  [/\bsukoon\b/gi, 'सुकून'],
+  [/\bshanti\b/gi, 'शांति'],
+  [/\bshaanti\b/gi, 'शांति'],
+  [/\bshant\b/gi, 'शांत'],
+  [/\bshaant\b/gi, 'शांत'],
+  [/\bhimmat\b/gi, 'हिम्मत'],
+  [/\bhausla\b/gi, 'हौसला'],
+  [/\bdarr?\b/gi, 'डर'],
+  [/\budas[i]?\b/gi, 'उदासी'],
+  [/\bgussa\b/gi, 'गुस्सा'],
+  [/\bchinta\b/gi, 'चिंता'],
+  [/\bpareshan[i]?\b/gi, 'परेशानी'],
+  [/\bpareshan\b/gi, 'परेशान'],
+  [/\btension\b/gi, 'चिंता'],
+  [/\banxiety\b/gi, 'चिंता'],
+  [/\boverthink(ing)?\b/gi, 'अत्यधिक सोच'],
+  [/\bexam[s]?\b/gi, 'परीक्षा'],
+  [/\bpariksha\b/gi, 'परीक्षा'],
+  [/\bpadhai\b/gi, 'पढ़ाई'],
+  [/\bstudy\b/gi, 'पढ़ाई'],
+  [/\bstudies\b/gi, 'पढ़ाई'],
+  [/\bmarks\b/gi, 'अंक'],
+  [/\bresult[s]?\b/gi, 'परिणाम'],
+  [/\bfocus\b/gi, 'एकाग्रता'],
+  [/\bconfidence\b/gi, 'आत्मविश्वास'],
+  [/\bfailure\b/gi, 'असफलता'],
+  [/\bfail\b/gi, 'असफल'],
+  [/\bpass\b/gi, 'सफल'],
+  [/\bsafalta\b/gi, 'सफलता'],
+  [/\bproblem[s]?\b/gi, 'समस्याएं'],
+  [/\bsolution[s]?\b/gi, 'समाधान'],
+  [/\bhelp\b/gi, 'मदद'],
+  [/\bmadad\b/gi, 'मदद'],
+  [/\bswasthya\b/gi, 'स्वास्थ्य'],
+  [/\bbhavishya\b/gi, 'भविष्य'],
+  [/\bfuture\b/gi, 'भविष्य'],
+  [/\bcareer\b/gi, 'करियर'],
+  [/\bzindagi\b/gi, 'ज़िंदगी'],
+  [/\bjeevan\b/gi, 'जीवन'],
+
+  // Verbs & Auxiliaries
+  [/\bkehte\b/gi, 'कहते'],
+  [/\bkehta\b/gi, 'कहता'],
+  [/\bkehti\b/gi, 'कहती'],
+  [/\bkaho\b/gi, 'कहो'],
+  [/\bkaha\b/gi, 'कहा'],
+  [/\bsamajh(te|ta|ti)?\b/gi, 'समझ'],
+  [/\bsamjho\b/gi, 'समझो'],
+  [/\bsamjhiye\b/gi, 'समझिए'],
+  [/\bkoshish\b/gi, 'कोशिश'],
+  [/\bbano\b/gi, 'बनो'],
+  [/\bbanoge\b/gi, 'बनोगे'],
+  [/\bbanogi\b/gi, 'बनोगी'],
+  [/\bbanenge\b/gi, 'बनेंगे'],
+  [/\bban\b/gi, 'बन'],
+  [/\bsuno\b/gi, 'सुनो'],
+  [/\bsuniye\b/gi, 'सुनिए'],
+  [/\bsun(te|ta|ti)?\b/gi, 'सुन'],
+  [/\bbatao\b/gi, 'बताओ'],
+  [/\bbataiye\b/gi, 'बताइए'],
+  [/\bdekho\b/gi, 'देखो'],
+  [/\bdekh\b/gi, 'देख'],
+  [/\bjao\b/gi, 'जाओ'],
+  [/\bjaao\b/gi, 'जाओ'],
+  [/\bjaa\b/gi, 'जा'],
+  [/\baao\b/gi, 'आओ'],
+  [/\baa\b/gi, 'आ'],
+  [/\ble\b/gi, 'ले'],
+  [/\blo\b/gi, 'लो'],
+  [/\bliya\b/gi, 'लिया'],
+  [/\bdiya\b/gi, 'दिया'],
+  [/\bdo\b/gi, 'दो'],
+  [/\bde\b/gi, 'दे'],
+  [/\bmil(ega|egi)?\b/gi, 'मिलेगा'],
+  [/\bmil\b/gi, 'मिल'],
+  [/\bchal(ega|egi)?\b/gi, 'चलेगा'],
+  [/\bchalo\b/gi, 'चलो'],
+  [/\bkarunga\b/gi, 'करूँगा'],
+  [/\bkarungi\b/gi, 'करूँगी'],
+  [/\bkarenge\b/gi, 'करेंगे'],
+  [/\bkarna\b/gi, 'करना'],
+  [/\bkarte\b/gi, 'करते'],
+  [/\bkarta\b/gi, 'करता'],
+  [/\bkarti\b/gi, 'करती'],
+  [/\bkaro\b/gi, 'करो'],
+  [/\bkarein\b/gi, 'करें'],
+  [/\bkijiye\b/gi, 'कीजिए'],
+  [/\bkar\b/gi, 'कर'],
+  [/\braha\b/gi, 'रहा'],
+  [/\brahi\b/gi, 'रही'],
+  [/\brahe\b/gi, 'रहे'],
+  [/\braho\b/gi, 'रहो'],
+  [/\bshuru\b/gi, 'शुरू'],
+  [/\bsoch(te|ta|ti)?\b/gi, 'सोच'],
+  [/\bsocho\b/gi, 'सोचो'],
+  [/\bsochna\b/gi, 'सोचना'],
+  [/\bchahta\b/gi, 'चाहता'],
+  [/\bchahti\b/gi, 'चाहती'],
+  [/\bchahte\b/gi, 'चाहते'],
+  [/\bhote\b/gi, 'होते'],
+  [/\bhota\b/gi, 'होता'],
+  [/\bhoti\b/gi, 'होती'],
+  [/\brehte\b/gi, 'रहते'],
+  [/\brehta\b/gi, 'रहता'],
+  [/\brehti\b/gi, 'रहती'],
+  [/\brakho\b/gi, 'रखो'],
+  [/\brakh(iye)?\b/gi, 'रखिए'],
+  [/\bhoga\b/gi, 'होगा'],
+  [/\bhogi\b/gi, 'होगी'],
+  [/\bhonge\b/gi, 'होंगे'],
+  [/\bhai\b/gi, 'है'],
+  [/\bhain\b/gi, 'हैं'],
+  [/\bho\b/gi, 'हो'],
+  [/\bhoon\b/gi, 'हूँ'],
+  [/\bhu\b/gi, 'हूँ'],
+  [/\btha\b/gi, 'था'],
+  [/\bthe\b/gi, 'थे'],
+  [/\bthi\b/gi, 'थी'],
+  [/\bpaoge\b/gi, 'पाओगे'],
+  [/\bpaogi\b/gi, 'पाओगी'],
+  [/\bpaunga\b/gi, 'पाऊंगा'],
+  [/\bpaungi\b/gi, 'पाऊंगी'],
+  [/\bsakte\b/gi, 'सकते'],
+  [/\bsakti\b/gi, 'सकती'],
+  [/\bsakta\b/gi, 'सकता'],
+
+  // Pronouns
+  [/\bmain\b/gi, 'मैं'],
+  [/\bmai\b/gi, 'मैं'],
+  [/\bmujhe\b/gi, 'मुझे'],
+  [/\bmujhko\b/gi, 'मुझको'],
+  [/\bmera\b/gi, 'मेरा'],
+  [/\bmeri\b/gi, 'मेरी'],
+  [/\bmere\b/gi, 'मेरे'],
+  [/\baapke\b/gi, 'आपके'],
+  [/\baapka\b/gi, 'आपका'],
+  [/\baapki\b/gi, 'आपकी'],
+  [/\baapko\b/gi, 'आपको'],
+  [/\baap\b/gi, 'आप'],
+  [/\btumhara\b/gi, 'तुम्हारा'],
+  [/\btumhari\b/gi, 'तुम्हारी'],
+  [/\btumhare\b/gi, 'तुम्हारे'],
+  [/\btumhe\b/gi, 'तुम्हें'],
+  [/\btumko\b/gi, 'तुमको'],
+  [/\btum\b/gi, 'तुम'],
+  [/\bhum\b/gi, 'हम'],
+  [/\bham\b/gi, 'हम'],
+  [/\bhumein\b/gi, 'हमें'],
+  [/\bhumko\b/gi, 'हमको'],
+  [/\bhamara\b/gi, 'हमारा'],
+  [/\bhamari\b/gi, 'हमारी'],
+  [/\bhamare\b/gi, 'हमारे'],
+  [/\byeh\b/gi, 'यह'],
+  [/\bye\b/gi, 'यह'],
+  [/\bwoh\b/gi, 'वह'],
+  [/\bwo\b/gi, 'वह'],
+  [/\bis\b/gi, 'इस'],
+  [/\bus\b/gi, 'उस'],
+  [/\bin\b/gi, 'इन'],
+  [/\bun\b/gi, 'उन'],
+  [/\biska\b/gi, 'इसका'],
+  [/\biski\b/gi, 'इसकी'],
+  [/\biske\b/gi, 'इसके'],
+  [/\buska\b/gi, 'उसका'],
+  [/\buski\b/gi, 'उसकी'],
+  [/\buske\b/gi, 'उसके'],
+  [/\bapna\b/gi, 'अपना'],
+  [/\bapne\b/gi, 'अपने'],
+  [/\bapni\b/gi, 'अपनी'],
+
+  // Connectors, Adverbs, Modifiers
+  [/\bsath\b/gi, 'साथ'],
+  [/\bsaath\b/gi, 'साथ'],
+  [/\bhamesha\b/gi, 'हमेशा'],
+  [/\bkabhi\b/gi, 'कभी'],
+  [/\bbilkul\b/gi, 'बिल्कुल'],
+  [/\bzaroor\b/gi, 'ज़रूर'],
+  [/\bzaroorat\b/gi, 'ज़रूरत'],
+  [/\bbohot\b/gi, 'बहुत'],
+  [/\bbahut\b/gi, 'बहुत'],
+  [/\bzyada\b/gi, 'ज़्यादा'],
+  [/\bjyada\b/gi, 'ज़्यादा'],
+  [/\bthoda\b/gi, 'थोड़ा'],
+  [/\bthodi\b/gi, 'थोड़ी'],
+  [/\bthode\b/gi, 'थोड़े'],
+  [/\baccha\b/gi, 'अच्छा'],
+  [/\bacchi\b/gi, 'अच्छी'],
+  [/\bacche\b/gi, 'अच्छे'],
+  [/\bachha\b/gi, 'अच्छा'],
+  [/\bsahi\b/gi, 'सही'],
+  [/\btheek\b/gi, 'ठीक'],
+  [/\bthik\b/gi, 'ठीक'],
+  [/\bnahi\b/gi, 'नहीं'],
+  [/\bna\b/gi, 'ना'],
+  [/\bhaan\b/gi, 'हाँ'],
+  [/\bha\b/gi, 'हाँ'],
+  [/\bkyun\b/gi, 'क्यों'],
+  [/\bkyu\b/gi, 'क्यों'],
+  [/\bkaise\b/gi, 'कैसे'],
+  [/\bkaisa\b/gi, 'कैसा'],
+  [/\bkaisi\b/gi, 'कैसी'],
+  [/\bkya\b/gi, 'क्या'],
+  [/\bkab\b/gi, 'कब'],
+  [/\bkahan\b/gi, 'कहाँ'],
+  [/\bkaun\b/gi, 'कौन'],
+  [/\bkitna\b/gi, 'कितना'],
+  [/\bkitne\b/gi, 'कितने'],
+  [/\bkitni\b/gi, 'कितनी'],
+  [/\bmat\b/gi, 'मत'],
+  [/\bman\b/gi, 'मन'],
+  [/\bmann\b/gi, 'मन'],
+  [/\bdimag\b/gi, 'दिमाग'],
+  [/\bdil\b/gi, 'दिल'],
+  [/\baur\b/gi, 'और'],
+  [/\blekin\b/gi, 'लेकिन'],
+  [/\bmagar\b/gi, 'मगर'],
+  [/\bpar\b/gi, 'पर'],
+  [/\bpe\b/gi, 'पे'],
+  [/\bmein\b/gi, 'में'],
+  [/\bme\b/gi, 'में'],
+  [/\bse\b/gi, 'से'],
+  [/\bko\b/gi, 'को'],
+  [/\bka\b/gi, 'का'],
+  [/\bki\b/gi, 'की'],
+  [/\bke\b/gi, 'के'],
+  [/\btoh\b/gi, 'तो'],
+  [/\bto\b/gi, 'तो'],
+  [/\bbhi\b/gi, 'भी'],
+  [/\bsab\b/gi, 'सब'],
+  [/\bsabkuch\b/gi, 'सबकुछ'],
+  [/\bkuch\b/gi, 'कुछ'],
+  [/\bkoi\b/gi, 'कोई'],
+  [/\bhar\b/gi, 'हर'],
+  [/\baaj\b/gi, 'आज'],
+  [/\bkal\b/gi, 'कल'],
+  [/\babhi\b/gi, 'अभी'],
+  [/\bpehle\b/gi, 'पहले'],
+  [/\bbaad\b/gi, 'बाद'],
+  [/\byahan\b/gi, 'यहाँ'],
+  [/\bwahan\b/gi, 'वहाँ'],
+  [/\baisa\b/gi, 'ऐसा'],
+  [/\baise\b/gi, 'ऐसे'],
+  [/\baisi\b/gi, 'ऐसी'],
+  [/\bsaccha\b/gi, 'सच्चा'],
+  [/\bsacchi\b/gi, 'सच्ची'],
+  [/\bsacche\b/gi, 'सच्चे'],
+  [/\bbaat\b/gi, 'बात'],
+  [/\bbaatein\b/gi, 'बातें'],
+  [/\bek\b/gi, 'एक']
+];
+
+function convertHinglishToSimpleHindi(text) {
+  if (!text) return '';
+  let res = text;
+  for (const [pattern, replacement] of HINGLISH_TO_HINDI_MAP) {
+    res = res.replace(pattern, replacement);
+  }
+  return res;
+}
+
+function enhancePronunciationForSpeech(text, isNativeHindiVoice) {
+  if (!text) return '';
+  const isDevanagari = /[\u0900-\u097F]/.test(text);
+  if (isNativeHindiVoice && isDevanagari) {
+    return text;
+  }
+  // If fallback English voice is used, make sure divine names are pronounced with respect
+  let modified = text;
+  modified = modified.replace(/\b(shrimad|shrimat|shri\s+mat|shri\s+mad)\s+(bhagavad|bhagwat)\s+gita\b/gi, 'Shree-mud Bhug-vud Geeta');
+  modified = modified.replace(/\b(bhagavad|bhagwat)\s+gita\b/gi, 'Bhug-vud Geeta');
+  modified = modified.replace(/\b(bhagavad|bhagwat)\b/gi, 'Bhug-vud');
+  modified = modified.replace(/\bgita\b/gi, 'Geeta');
+  modified = modified.replace(/\bmadhav\b/gi, 'Maa-dhuv');
+  modified = modified.replace(/\bkrishna\b/gi, 'Krish-nuh');
+  modified = modified.replace(/\barjuna?\b/gi, 'Urr-joon');
+  return modified;
+}
+
+
+// Web Speech API with Multi-Language Voice Engine & Watchdog Heartbeat
+let speechQueue = [];
+let isSpeechPlaying = false;
+window.activeSpeechUtterances = [];
+let activeSpeakBtn = null;
+let speechHeartbeatTimer = null;
+let speechWatchdogTimeout = null;
+
+function startSpeechHeartbeat() {
+  stopSpeechHeartbeat();
+  speechHeartbeatTimer = setInterval(() => {
+    if (isSpeechPlaying && window.speechSynthesis && window.speechSynthesis.speaking) {
+      window.speechSynthesis.pause();
+      window.speechSynthesis.resume();
+    }
+  }, 3500);
+}
+
+function stopSpeechHeartbeat() {
+  if (speechHeartbeatTimer) {
+    clearInterval(speechHeartbeatTimer);
+    speechHeartbeatTimer = null;
+  }
+  if (speechWatchdogTimeout) {
+    clearTimeout(speechWatchdogTimeout);
+    speechWatchdogTimeout = null;
+  }
+}
+
+function sanitizeForSpeech(raw) {
+  if (!raw) return '';
+  let s = raw;
+  // Strip URLs and markdown links
+  s = s.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
+  s = s.replace(/https?:\/\/\S+/g, '');
+  // Strip all emojis (prevents synthesizers from reading aloud emoji names like "feather", "herb")
+  s = s.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/gu, ' ');
+  // Convert Sanskrit / Hindi danda into natural breath pauses
+  s = s.replace(/[॥|]/g, ', ');
+  s = s.replace(/।/g, '. ');
+  // Strip markdown formatting symbols and headers
+  s = s.replace(/\*\*(.*?)\*\*/g, '$1');
+  s = s.replace(/\*(.*?)\*/g, '$1');
+  s = s.replace(/#{1,6}\s*/g, '');
+  s = s.replace(/[`~_\[\]()]/g, ' ');
+  // Convert list bullets to smooth pauses
+  s = s.replace(/[•\-\–\—]/g, ', ');
+  s = s.replace(/[""«»"]/g, ' ');
+  // Clean numbered points: "1." -> "1, "
+  s = s.replace(/(\d+)\.\s*/g, '$1, ');
+  // Remove decorative sparkles/feathers
+  s = s.replace(/[✦🪶🌿🧘✨]/g, '');
+  // Normalize whitespace and blank lines
+  s = s.replace(/[ \t]+/g, ' ');
+  s = s.replace(/\n\s*\n+/g, '\n');
+  return s.trim();
+}
+
+function splitIntoSpeechChunks(text) {
+  // Split along punctuation pauses: '.', '!', '?', or newlines
+  const rawChunks = text.split(/(?<=[.?!।\n])\s+/);
+  const chunks = [];
+  for (let c of rawChunks) {
+    c = c.trim();
+    if (!c) continue;
+    // Chunk down phrases longer than 85 chars to prevent Chromium buffer drops
+    if (c.length > 85) {
+      const sub = c.split(/(?<=[,;:—–])\s+/);
+      for (let s of sub) {
+        s = s.trim();
+        if (!s) continue;
+        if (s.length > 85) {
+          const words = s.split(/\s+/);
+          let buf = '';
+          for (let w of words) {
+            if ((buf + ' ' + w).length > 80) {
+              if (buf) chunks.push(buf.trim());
+              buf = w;
+            } else {
+              buf = buf ? buf + ' ' + w : w;
+            }
+          }
+          if (buf.trim()) chunks.push(buf.trim());
+        } else {
+          chunks.push(s);
+        }
+      }
+    } else {
+      chunks.push(c);
+    }
+  }
+  return chunks;
+}
+
+function detectVoiceLangForChunk(chunk, activeLang) {
+  // If active language is Hindi or Hinglish, always use Hindi voice engine (hi-IN)
+  // so that both Hindi and Hinglish are spoken like natural, simple, authentic Hindi!
+  if (activeLang === 'hi' || activeLang === 'hinglish') {
+    return 'hi-IN';
+  }
+
+  const devanagariCount = (chunk.match(/[\u0900-\u097F]/g) || []).length;
+  const latinCount = (chunk.match(/[a-zA-Z]/g) || []).length;
+
+  // If a chunk is predominantly Sanskrit / Devanagari, speak it with native Hindi voice
+  if (devanagariCount > 0 && (latinCount === 0 || devanagariCount >= latinCount)) {
+    return 'hi-IN';
+  }
+
+  // English: Indian English or standard English voice
+  return 'en-IN';
+}
+
+function getBestVoiceForLang(langCode) {
+  const voices = window.speechSynthesis.getVoices() || [];
+  if (!voices.length) return null;
+
+  const isHindi = (langCode === 'hi-IN' || langCode === 'hi' || langCode.toLowerCase().startsWith('hi'));
+  if (isHindi) {
+    // 1. Natural / Neural Hindi voices
+    let v = voices.find(v => v.lang && (v.lang === 'hi-IN' || v.lang === 'hi_IN' || v.lang.toLowerCase().startsWith('hi')) &&
+      (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Swara') || v.name.includes('Kalpana') || v.name.includes('Hemant')));
+    if (v) return v;
+    // 2. Any Hindi voice
+    v = voices.find(v => (v.lang && v.lang.toLowerCase().startsWith('hi')) || (v.name && v.name.toLowerCase().includes('hindi')));
+    if (v) return v;
+    // 3. Fallback to Indian English (phonetically tailored for Indian accents)
+    v = voices.find(v => (v.lang && (v.lang === 'en-IN' || v.lang === 'en_IN')) || (v.name && v.name.toLowerCase().includes('india')));
+    if (v) return v;
+    return null;
+  }
+
+  // Indian English / Hinglish / English:
+  // 1. Natural Indian English voice
+  let v = voices.find(v => (v.lang && (v.lang === 'en-IN' || v.lang === 'en_IN') || (v.name && v.name.toLowerCase().includes('india'))) &&
+    (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Neerja') || v.name.includes('Prabhat') || v.name.includes('Heera') || v.name.includes('Ravi')));
+  if (v) return v;
+  // 2. Any Indian English voice
+  v = voices.find(v => (v.lang && (v.lang === 'en-IN' || v.lang === 'en_IN')) || (v.name && v.name.toLowerCase().includes('india')));
+  if (v) return v;
+  // 3. Natural English voice
+  v = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google')));
+  if (v) return v;
+  // 4. Any English voice
+  v = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en'));
+  return v || null;
+}
+
+function stopSpeaking() {
+  isSpeechPlaying = false;
+  speechQueue = [];
+  stopSpeechHeartbeat();
+  if ('speechSynthesis' in window) {
+    try { window.speechSynthesis.cancel(); } catch(e){}
+  }
+  if (activeSpeakBtn) {
+    activeSpeakBtn.textContent = '🔊';
+    activeSpeakBtn.classList.remove('is-speaking');
+    activeSpeakBtn.title = 'Listen aloud';
+    activeSpeakBtn = null;
+  }
+  window.activeSpeechUtterances = [];
+}
+
+function playNextSpeechChunk() {
+  if (!isSpeechPlaying || speechQueue.length === 0) {
+    stopSpeaking();
+    return;
+  }
+
+  if (speechWatchdogTimeout) {
+    clearTimeout(speechWatchdogTimeout);
+    speechWatchdogTimeout = null;
+  }
+
+  const currentItem = speechQueue.shift();
+  const voice = getBestVoiceForLang(currentItem.lang);
+  const isNativeHindi = voice && voice.lang && voice.lang.toLowerCase().startsWith('hi');
+
+  let textToSpeak = currentItem.text;
+  if (currentLang === 'hinglish' || currentItem.lang === 'hi-IN') {
+    // If active language is Hinglish or chunk is Hindi, convert to sweet, authentic simple Hindi Devanagari
+    textToSpeak = convertHinglishToSimpleHindi(textToSpeak);
+  }
+
+  // Phonetically polish any remaining terms (e.g. Shrimad Bhagavad Gita)
+  const spokenText = enhancePronunciationForSpeech(textToSpeak, isNativeHindi);
+  const u = new SpeechSynthesisUtterance(spokenText);
+
+  // Keep references in global array to prevent V8 garbage collection
+  window.activeSpeechUtterances = [u];
+
+  if (voice) {
+    u.voice = voice;
+  }
+  u.lang = currentItem.lang;
+
+  // Apply user-configured reading speed (0.75x, 1x, 1.25x, 1.5x)
+  u.rate = currentSpeechRate;
+  u.pitch = 1.0;
+  u.volume = 1.0;
+
+  let chunkHandled = false;
+  const finishChunk = () => {
+    if (chunkHandled) return;
+    chunkHandled = true;
+    if (speechWatchdogTimeout) {
+      clearTimeout(speechWatchdogTimeout);
+      speechWatchdogTimeout = null;
+    }
+    if (isSpeechPlaying) {
+      playNextSpeechChunk();
+    }
+  };
+
+  u.onend = finishChunk;
+  u.onerror = (err) => {
+    console.warn('Speech chunk notification:', err);
+    finishChunk();
+  };
+
+  // Watchdog: If an utterance hangs or stops firing onend for >7s, automatically advance
+  speechWatchdogTimeout = setTimeout(() => {
+    if (isSpeechPlaying && !chunkHandled) {
+      console.warn('Speech watchdog advancing to next chunk');
+      finishChunk();
+    }
+  }, 7000);
+
+  try {
+    window.speechSynthesis.resume();
+  } catch(e) {}
+
+  window.speechSynthesis.speak(u);
+}
+
+function speakMessage(btn) {
+  if (!('speechSynthesis' in window)) {
+    toast('Text-to-speech audio is not supported in this browser.');
+    return;
+  }
+
+  // Toggle off if already speaking this message
+  if (activeSpeakBtn === btn && (window.speechSynthesis.speaking || isSpeechPlaying)) {
+    stopSpeaking();
+    toast('Audio playback stopped ⏹️');
+    return;
+  }
+
+  stopSpeaking();
+
+  const copyEl = btn.closest('.message-copy');
+  const textEl = copyEl ? copyEl.querySelector('.message-text-content') : null;
+  if (!textEl) return;
+
+  // Include text from message and Gita insight card if present
+  const cardEl = copyEl.querySelector('.message-card');
+  const gitaEl = cardEl ? cardEl.querySelector('.gita-insight-card') : null;
+
+  let rawText = textEl.innerText || textEl.textContent || '';
+  if (gitaEl) {
+    rawText += '\n' + (gitaEl.innerText || gitaEl.textContent || '');
+  }
+
+  const cleanText = sanitizeForSpeech(rawText);
+  if (!cleanText) return;
+
+  const chunks = splitIntoSpeechChunks(cleanText);
+  if (!chunks.length) return;
+
+  speechQueue = chunks.map(c => ({
+    text: c,
+    lang: detectVoiceLangForChunk(c, currentLang)
+  }));
+
+  isSpeechPlaying = true;
+  activeSpeakBtn = btn;
+  btn.textContent = '⏹️';
+  btn.classList.add('is-speaking');
+  btn.title = 'Stop listening';
+
+  startSpeechHeartbeat();
+
+  const langLabel = currentLang === 'hi' ? 'हिंदी (Hindi)' : currentLang === 'hinglish' ? 'Hinglish (सरल हिंदी)' : 'English';
+  toast(`Speaking Madhav's guidance in ${langLabel} (${currentSpeechRate}x) 🔊 (Click ⏹️ to stop)`);
+  playNextSpeechChunk();
+}
+
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.onvoiceschanged = () => {
+    window.speechSynthesis.getVoices();
+  };
+  try {
+    window.speechSynthesis.getVoices();
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. Language Initialization
+  const urlParams = new URLSearchParams(window.location.search);
+  const paramLang = urlParams.get('lang');
+  const savedLang = paramLang || localStorage.getItem('mannmitra_chat_lang') || currentLang || 'en';
+  if (savedLang && (savedLang === 'en' || savedLang === 'hi' || savedLang === 'hinglish')) {
+    switchChatLang(savedLang, null, false);
+  } else {
+    renderQuickPrompts();
+  }
+
+  // 2. Reading Speed Initialization
+  const savedRate = parseFloat(localStorage.getItem('mannmitra_speech_rate') || '1.0');
+  currentSpeechRate = savedRate;
+  document.querySelectorAll('.speed-pill').forEach(p => {
+    p.classList.toggle('active', parseFloat(p.dataset.speed) === currentSpeechRate);
+  });
+
+  // 3. Auto-scroll to bottom of conversation smoothly on open
+  const conv = document.getElementById('conversation');
+  if (conv) {
+    conv.scrollTop = conv.scrollHeight;
+  }
+  scrollToBottom(false);
+});
+
+
+// Fast & Smooth Typewriter Streaming Animation for Ask Madhav
+function typeMessage(element, fullText, onDone) {
+  let idx = 0;
+  const stepMs = 8;
+  const chunkLen = fullText.length > 250 ? 6 : (fullText.length > 100 ? 4 : 2);
+  element.innerHTML = '<span class="type-cursor">▌</span>';
+
+  const timer = setInterval(() => {
+    idx += chunkLen;
+    if (idx >= fullText.length) {
+      clearInterval(timer);
+      element.innerHTML = formatMarkdown(fullText);
+      if (onDone) onDone();
+      scrollToBottom(true);
+    } else {
+      const partial = fullText.slice(0, idx);
+      element.innerHTML = formatMarkdown(partial) + '<span class="type-cursor">▌</span>';
+      scrollToBottom(false);
+    }
+  }, stepMs);
+}
+
+// Delete / Clear Conversation Handler
+async function confirmClearChat() {
+  if (!confirm("Are you sure you want to clear your conversation with Madhav? This will delete all chat history.")) {
+    return;
+  }
+  stopSpeaking();
+  try {
+    const res = await fetch('/api/chat/clear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (res.ok) {
+      const conv = document.getElementById('conversation');
+      const rows = conv.querySelectorAll('.message-row');
+      rows.forEach((r, idx) => {
+        if (idx > 0) r.remove();
+      });
+      toast('Conversation cleared successfully ✦');
+    } else {
+      toast('Could not clear conversation. Please try again.');
+    }
+  } catch (err) {
+    toast('Network error while clearing conversation.');
+  }
+}
+
+// Asynchronous AJAX Chat Handler
+async function handleSend(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const box = document.getElementById('message');
+  const msg = box.value.trim();
+  if (!msg) return;
+
+  // Append user message bubble immediately
+  appendMessageBubble('user', msg);
+  box.value = '';
+  box.style.height = 'auto';
+
+  // Show typing indicator
+  const typingRow = document.getElementById('typingRow');
+  typingRow.style.display = 'flex';
+  scrollToBottom(true);
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, language: currentLang })
+    });
+
+    typingRow.style.display = 'none';
+
+    if (res.ok) {
+      const data = await res.json();
+      appendMessageBubble('ai', data.reply, data.gita, true);
+    } else {
+      appendMessageBubble('ai', 'I am reflecting right now. Please check your connection or try asking again.', null, true);
+    }
+  } catch (err) {
+    typingRow.style.display = 'none';
+    appendMessageBubble('ai', 'Connection interruption. Please check your network and try again.', null, true);
+  }
+}
+
+function appendMessageBubble(sender, text, gita, animate = false) {
+  const conv = document.getElementById('conversation');
+  const typingRow = document.getElementById('typingRow');
+  const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const row = document.createElement('div');
+  row.className = `message-row ${sender === 'user' ? 'user-row' : 'ai-row'}`;
+
+  let gitaHtml = '';
+  if (gita && (gita.reference || gita.sanskrit)) {
+    const ref = gita.reference || 'Bhagavad Gita Wisdom';
+    const meaning = gita.meaning_hi || gita.meaning_hinglish || gita.meaning_en || gita.active_meaning || gita.short_meaning || '';
+    gitaHtml = `
+      <div class="gita-insight-card">
+        <div class="gita-insight-header">
+          <span class="feather-icon">🪶</span>
+          <div>
+            <span class="gita-tag">BHAGAVAD GITA WISDOM</span>
+            <strong class="gita-ref-title">${escapeHtml(ref)}</strong>
+          </div>
+        </div>
+        ${meaning ? `<p class="gita-desc">${escapeHtml(meaning)}</p>` : ''}
+      </div>
+    `;
+  }
+
+  if (sender === 'user') {
+    row.innerHTML = `
+      <div class="message-copy">
+        <div class="message-card user-message whatsapp-bubble-user">
+          <div class="user-bubble-text">${escapeHtml(text)}</div>
+          <div class="message-meta user-meta">
+            <span>${now}</span>
+            <span class="read-receipt" title="Delivered">✓✓</span>
+          </div>
+        </div>
+      </div>
+    `;
+    conv.insertBefore(row, typingRow);
+    scrollToBottom(true);
+  } else {
+    // Madhav AI Message
+    row.innerHTML = `
+      <div class="message-avatar-small">
+        <img src="/static/img/logo.png" alt="Madhav" class="avatar-img-micro">
+      </div>
+      <div class="message-copy">
+        <div class="message-meta">
+          <b>Madhav 🪶</b>
+          <span>${now}</span>
+          <button type="button" class="speak-inline-btn" title="Listen aloud" onclick="speakMessage(this)">🔊</button>
+        </div>
+        <div class="message-card ai-message whatsapp-bubble-ai">
+          <div class="message-text-content" style="white-space: pre-line;"></div>
+        </div>
+      </div>
+    `;
+
+    conv.insertBefore(row, typingRow);
+    const contentEl = row.querySelector('.message-text-content');
+    const cardEl = row.querySelector('.message-card');
+
+    if (animate) {
+      typeMessage(contentEl, text, () => {
+        if (gitaHtml) {
+          const gitaDiv = document.createElement('div');
+          gitaDiv.innerHTML = gitaHtml;
+          cardEl.appendChild(gitaDiv.firstElementChild);
+          scrollToBottom(true);
+        }
+      });
+    } else {
+      contentEl.innerHTML = formatMarkdown(text);
+      if (gitaHtml) {
+        const gitaDiv = document.createElement('div');
+        gitaDiv.innerHTML = gitaHtml;
+        cardEl.appendChild(gitaDiv.firstElementChild);
+      }
+      scrollToBottom(true);
+    }
+  }
+}
+
+function scrollToBottom(smooth = true) {
+  const conv = document.getElementById('conversation');
+  if (!conv) return;
+  if (!smooth) {
+    conv.scrollTop = conv.scrollHeight;
+    return;
+  }
+  requestAnimationFrame(() => {
+    try {
+      conv.scrollTo({
+        top: conv.scrollHeight + 150,
+        behavior: 'smooth'
+      });
+    } catch(e) {
+      conv.scrollTop = conv.scrollHeight;
+    }
+  });
+}
+
+function escapeHtml(str) {
+  return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function formatMarkdown(str) {
+  let s = escapeHtml(str);
+  s = s.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+  s = s.replace(/\*(.*?)\*/g, '<i>$1</i>');
+  s = s.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" class="text-link">$1</a>');
+  return s;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,390 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="calm-page">
+  <div class="page-head text-center">
+    <div>
+      <span class="tag">MINDFUL SPACE · CALM MODE</span>
+      <h1>Pause. Breathe. Reset.</h1>
+      <p>A quiet digital sanctuary to slow your heart rate, quiet mental chatter, and restore inner balance.</p>
+    </div>
+  </div>
+
+  <div class="calm-grid">
+    <!-- Breathing Exercise Guide -->
+    <section class="panel calm-panel breathing-panel">
+      <div class="panel-head">
+        <div>
+          <span class="tag">4-7-8 BREATHING</span>
+          <h2>Ground your nervous system</h2>
+        </div>
+        <span class="badge" id="cycleCount">Cycle: 0 / 4</span>
+      </div>
+
+      <div class="breathing-container">
+        <div class="breathing-circle-outer" id="breathOuter">
+          <div class="breathing-circle" id="breathCircle">
+            <span class="breath-text" id="breathInstruction">Ready</span>
+            <span class="breath-timer" id="breathTimer">4s</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="breathing-controls">
+        <button type="button" class="btn btn-lg" id="breathBtn" onclick="toggleBreathing()">Start Breathing ✦</button>
+        <button type="button" class="gita-ghost-btn" onclick="resetBreathing()">Reset</button>
+      </div>
+      <p class="breathing-hint">Inhale deeply through nose (4s) • Hold with calm focus (7s) • Exhale slowly through mouth (8s)</p>
+    </section>
+
+    <!-- Ambient Soundscape Player -->
+    <section class="panel calm-panel soundscape-panel">
+      <div class="panel-head">
+        <div>
+          <span class="tag">AMBIENT SOUNDS</span>
+          <h2>Nature & temple soundscapes</h2>
+        </div>
+        <span class="live-pill" id="soundStatus"><i></i> Offline audio</span>
+      </div>
+      <p class="sound-desc">Synthesized in real-time in your browser for deep relaxation and focus. No internet streaming needed.</p>
+
+      <div class="sound-grid">
+        <button type="button" class="sound-card" data-sound="rain" onclick="toggleSound('rain', this)">
+          <span class="sound-icon">🌧️</span>
+          <b>Gentle Rain</b>
+          <small>Soft steady drizzle</small>
+        </button>
+
+        <button type="button" class="sound-card" data-sound="temple" onclick="toggleSound('temple', this)">
+          <span class="sound-icon">🔔</span>
+          <b>Temple Om Tone</b>
+          <small>Meditative 432Hz resonance</small>
+        </button>
+
+        <button type="button" class="sound-card" data-sound="forest" onclick="toggleSound('forest', this)">
+          <span class="sound-icon">🌲</span>
+          <b>Forest Stream</b>
+          <small>Flowing mountain water</small>
+        </button>
+
+        <button type="button" class="sound-card" data-sound="waves" onclick="toggleSound('waves', this)">
+          <span class="sound-icon">🌊</span>
+          <b>Ocean Waves</b>
+          <small>Rhythmic tidal surge</small>
+        </button>
+      </div>
+
+      <div class="sound-volume-wrap">
+        <span>Volume</span>
+        <input type="range" id="soundVolume" min="0" max="1" step="0.05" value="0.5" oninput="setMasterVolume(this.value)">
+      </div>
+    </section>
+  </div>
+
+  <!-- Multilingual Peaceful Reflections -->
+  <section class="panel calm-quotes-panel">
+    <div class="panel-head">
+      <div>
+        <span class="tag">MOMENT OF WISDOM</span>
+        <h2>Peaceful reflections for today</h2>
+      </div>
+      <div class="lang-pill-group">
+        <button type="button" class="lang-pill active" onclick="setCalmLang('en', this)">English</button>
+        <button type="button" class="lang-pill" onclick="setCalmLang('hi', this)">हिंदी</button>
+        <button type="button" class="lang-pill" onclick="setCalmLang('hinglish', this)">Hinglish</button>
+      </div>
+    </div>
+
+    <div class="calm-quote-card" id="calmQuoteArea">
+      <span class="quote-mark">“</span>
+      <p id="calmQuoteText">You are not the storm; you are the sky that holds the storm. Let thoughts pass through you without clinging to any of them.</p>
+      <div class="calm-quote-meta">
+        <b id="calmQuoteAuthor">Bhagavad Gita 2.70 · Ocean of Calm</b>
+        <a href="{{ url_for('journal.journal_page') }}" class="text-link">Write down this feeling in Journal →</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+// --- 4-7-8 Breathing Engine ---
+let breathRunning = false;
+let breathTimer = null;
+let cycle = 0;
+const maxCycles = 4;
+
+const quotes = {
+  en: [
+    { text: "You are not the storm; you are the sky that holds the storm. Let thoughts pass through you without clinging to any of them.", author: "Bhagavad Gita 2.70 · Ocean of Calm" },
+    { text: "Calmness of mind does not come from controlling everything outside, but from releasing the need to control the uncontrollable.", author: "Mindful Reflection · Shri Krishna" },
+    { text: "Take this breath for yourself. Everything else in your schedule can wait for three peaceful minutes.", author: "MannMitra Mindfulness" }
+  ],
+  hi: [
+    { text: "जैसे सागर में अनेक नदियां प्रवेश करती हैं परंतु सागर शांत रहता है, वैसे ही बुद्धिमान व्यक्ति के भीतर विचार आते हैं पर उसका चित्त स्थिर रहता है।", author: "श्रीमद्भगवद्गीता 2.70 · प्रशांत मानस" },
+    { text: "मन की शांति बाहर की परिस्थितियों से नहीं, बल्कि अपनी इच्छाओं और चिंताओं को विश्राम देने से आती है।", author: "श्रीकृष्ण मार्गदर्शन" },
+    { text: "यह क्षण आपका है। एक गहरी सांस लें और स्वयं को वर्तमान में स्थिर करें।", author: "मनमित्र ध्यान" }
+  ],
+  hinglish: [
+    { text: "Jaise samandar hazaron lehron ke baad bhi shaant rehta hai, waise hi apne inner peace ko bahar ke shor se disturb mat hone do.", author: "Bhagavad Gita 2.70 · Inner Peace" },
+    { text: "Har cheez ko control karna zaroori nahi hai. Thoda pause lo, deep breath lo aur process par bharosa rakho.", author: "Krishna Wisdom · Arjuna Guidance" },
+    { text: "Yeh 5 minute sirf tumhare liye hain. Baaki sab tension thodi der ke liye side mein rakh do.", author: "MannMitra Calm Space" }
+  ]
+};
+
+let currentCalmLang = 'en';
+
+function setCalmLang(lang, btn) {
+  currentCalmLang = lang;
+  document.querySelectorAll('.lang-pill-group .lang-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const arr = quotes[lang];
+  const q = arr[Math.floor(Math.random() * arr.length)];
+  document.getElementById('calmQuoteText').textContent = q.text;
+  document.getElementById('calmQuoteAuthor').textContent = q.author;
+}
+
+function toggleBreathing() {
+  if (breathRunning) {
+    pauseBreathing();
+  } else {
+    startBreathing();
+  }
+}
+
+function startBreathing() {
+  breathRunning = true;
+  document.getElementById('breathBtn').textContent = 'Pause Breathing';
+  document.getElementById('breathBtn').classList.add('active-pause');
+  runPhase('Inhale', 4, () => {
+    runPhase('Hold', 7, () => {
+      runPhase('Exhale', 8, () => {
+        cycle++;
+        document.getElementById('cycleCount').textContent = `Cycle: ${cycle} / ${maxCycles}`;
+        if (cycle < maxCycles && breathRunning) {
+          startBreathing();
+        } else {
+          resetBreathing();
+          document.getElementById('breathInstruction').textContent = 'Well done 🌿';
+          document.getElementById('breathTimer').textContent = 'Peace';
+        }
+      });
+    });
+  });
+}
+
+function pauseBreathing() {
+  breathRunning = false;
+  clearTimeout(breathTimer);
+  document.getElementById('breathBtn').textContent = 'Resume Breathing ✦';
+  document.getElementById('breathBtn').classList.remove('active-pause');
+  document.getElementById('breathInstruction').textContent = 'Paused';
+}
+
+function resetBreathing() {
+  breathRunning = false;
+  clearTimeout(breathTimer);
+  cycle = 0;
+  document.getElementById('cycleCount').textContent = `Cycle: 0 / ${maxCycles}`;
+  document.getElementById('breathBtn').textContent = 'Start Breathing ✦';
+  document.getElementById('breathBtn').classList.remove('active-pause');
+  document.getElementById('breathCircle').className = 'breathing-circle';
+  document.getElementById('breathInstruction').textContent = 'Ready';
+  document.getElementById('breathTimer').textContent = '4s';
+}
+
+function runPhase(name, seconds, onComplete) {
+  if (!breathRunning) return;
+  const circle = document.getElementById('breathCircle');
+  const inst = document.getElementById('breathInstruction');
+  const timerEl = document.getElementById('breathTimer');
+
+  inst.textContent = name;
+  circle.className = 'breathing-circle ' + name.toLowerCase();
+
+  let remaining = seconds;
+  timerEl.textContent = remaining + 's';
+
+  const tick = () => {
+    if (!breathRunning) return;
+    remaining--;
+    if (remaining > 0) {
+      timerEl.textContent = remaining + 's';
+      breathTimer = setTimeout(tick, 1000);
+    } else {
+      timerEl.textContent = '0s';
+      onComplete();
+    }
+  };
+  breathTimer = setTimeout(tick, 1000);
+}
+
+// --- Web Audio API Ambient Soundscapes ---
+let audioCtx = null;
+let activeSounds = {};
+let masterGain = null;
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+    masterGain.connect(audioCtx.destination);
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+
+function setMasterVolume(v) {
+  if (masterGain && audioCtx) {
+    masterGain.gain.setValueAtTime(parseFloat(v), audioCtx.currentTime);
+  }
+}
+
+function toggleSound(type, btn) {
+  initAudio();
+  if (activeSounds[type]) {
+    stopSound(type);
+    btn.classList.remove('playing');
+  } else {
+    playSound(type);
+    btn.classList.add('playing');
+  }
+}
+
+function playSound(type) {
+  if (!audioCtx) return;
+
+  if (type === 'rain') {
+    // Pink noise buffer generator
+    const bufferSize = audioCtx.sampleRate * 2;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      b0 = 0.99886 * b0 + white * 0.0555179;
+      b1 = 0.99332 * b1 + white * 0.0750759;
+      b2 = 0.96900 * b2 + white * 0.1538520;
+      b3 = 0.86650 * b3 + white * 0.3104856;
+      b4 = 0.55000 * b4 + white * 0.5329522;
+      b5 = -0.7616 * b5 - white * 0.0168980;
+      output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.04;
+      b6 = white * 0.115926;
+    }
+    const whiteNoise = audioCtx.createBufferSource();
+    whiteNoise.buffer = noiseBuffer;
+    whiteNoise.loop = true;
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+
+    whiteNoise.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGain);
+    whiteNoise.start();
+
+    activeSounds['rain'] = { source: whiteNoise, gain: gain };
+  } else if (type === 'temple') {
+    // 432 Hz drone chord + gentle bell harmonic
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(216, audioCtx.currentTime); // A3 432 octave
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(432, audioCtx.currentTime);
+
+    gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(masterGain);
+
+    osc1.start();
+    osc2.start();
+
+    activeSounds['temple'] = { source: [osc1, osc2], gain: gain };
+  } else if (type === 'forest') {
+    // Flowing stream: filtered bandpass noise with slight frequency modulation
+    const bufferSize = audioCtx.sampleRate * 2;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = (Math.random() * 2 - 1) * 0.06;
+    }
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    noise.loop = true;
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(650, audioCtx.currentTime);
+    filter.Q.setValueAtTime(2.5, audioCtx.currentTime);
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGain);
+    noise.start();
+
+    activeSounds['forest'] = { source: noise, gain: gain };
+  } else if (type === 'waves') {
+    // Swelling ocean waves: noise with LFO volume modulation
+    const bufferSize = audioCtx.sampleRate * 2;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = (Math.random() * 2 - 1) * 0.08;
+    }
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    noise.loop = true;
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(450, audioCtx.currentTime);
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+
+    // LFO for wave surge
+    const lfo = audioCtx.createOscillator();
+    lfo.frequency.setValueAtTime(0.15, audioCtx.currentTime); // ~7 sec wave cycle
+    const lfoGain = audioCtx.createGain();
+    lfoGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+
+    lfo.connect(lfoGain);
+    lfoGain.connect(gain.gain);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGain);
+
+    noise.start();
+    lfo.start();
+
+    activeSounds['waves'] = { source: [noise, lfo], gain: gain };
+  }
+}
+
+function stopSound(type) {
+  const item = activeSounds[type];
+  if (!item) return;
+  try {
+    if (Array.isArray(item.source)) {
+      item.source.forEach(s => s.stop());
+    } else {
+      item.source.stop();
+    }
+  } catch (e) {}
+  delete activeSounds[type];
+}
+</script>
+{% endblock %}

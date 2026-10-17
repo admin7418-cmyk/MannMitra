@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en" data-theme="peacock">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="MannMitra - Intelligent Mental Wellness & Mood Journaling Platform for Students">
+  <title>{{ title or "MannMitra · Mindful Student Space" }}</title>
+
+  <!-- Google Fonts: Manrope, DM Sans, Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- Ambient background glow orbs -->
+  <div class="ambient a1" aria-hidden="true"></div>
+  <div class="ambient a2" aria-hidden="true"></div>
+
+  <!-- Main Sticky Navigation Bar -->
+  <nav class="nav">
+    <div class="nav-left">
+      <a class="brand" href="{{ url_for('home_routes.home') }}">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="MannMitra Logo" class="brand-logo-img">
+        <span class="brand-text">
+          <b>Mann</b>Mitra
+          <small>Shlokas • Guidance • Always With You</small>
+        </span>
+      </a>
+    </div>
+
+    <!-- Desktop Nav Links -->
+    <div class="nav-links" id="desktopNav">
+      {% if session.get('user_id') %}
+        <a href="{{ url_for('dashboard.dashboard_page') }}" class="nav-link">Dashboard</a>
+        <a href="{{ url_for('journal.journal_page') }}" class="nav-link">Journal</a>
+        <a href="{{ url_for('chat.chat_page') }}" class="nav-link highlight-madhav">🪶 Ask Madhav</a>
+        <a href="{{ url_for('gita.gita_page') }}" class="nav-link">Gita Wisdom</a>
+        <a href="{{ url_for('calm.calm_page') }}" class="nav-link highlight-calm">🧘 Calm Mode</a>
+        <a href="{{ url_for('habits.habit_page') }}" class="nav-link">Habits</a>
+        <a href="{{ url_for('community.community_page') }}" class="nav-link">Community</a>
+        <a href="{{ url_for('insights.insights_page') }}" class="nav-link">Insights</a>
+        <a href="{{ url_for('report.weekly_report_page') }}" class="nav-link">Weekly Report</a>
+        <a href="{{ url_for('profile.profile_page') }}" class="nav-link">Profile</a>
+        {% if session.get('admin_logged_in') or session.get('role') == 'admin' %}
+          <a href="{{ url_for('admin.admin_dashboard') }}" class="nav-link admin-nav-link">🛡️ Admin</a>
+        {% endif %}
+      {% else %}
+        <a href="{{ url_for('auth.login_page') }}" class="nav-link">Login</a>
+      {% endif %}
+    </div>
+
+    <!-- Right Controls: Professional Segmented Theme Buttons -->
+    <div class="nav-right">
+      <div class="theme-segmented-control" role="group" aria-label="Theme selection">
+        <button type="button" class="theme-pill-btn" data-theme="dark" onclick="setTheme('dark')" title="Night Mode">
+          <span class="theme-icon">🌙</span>
+          <span class="theme-label">Night</span>
+        </button>
+        <button type="button" class="theme-pill-btn" data-theme="peacock" onclick="setTheme('peacock')" title="Peacock Mode">
+          <span class="theme-icon">🦚</span>
+          <span class="theme-label">Peacock</span>
+        </button>
+        <button type="button" class="theme-pill-btn" data-theme="peace" onclick="setTheme('peace')" title="Peace Mode (Logo Colors)">
+          <span class="theme-icon">🕊️</span>
+          <span class="theme-label">Peace</span>
+        </button>
+      </div>
+
+      {% if session.get('user_id') %}
+        <a class="btn small logout-btn" href="{{ url_for('auth.logout') }}">Logout</a>
+      {% else %}
+        <a class="btn small get-started-btn" href="{{ url_for('auth.register_page') }}">Get Started ✦</a>
+      {% endif %}
+
+      <!-- Mobile Menu Hamburger Button -->
+      <button type="button" class="mobile-menu-toggle" onclick="toggleMobileNav()" aria-label="Toggle navigation menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Drawer Menu -->
+  <div class="mobile-drawer" id="mobileDrawer" hidden>
+    <div class="mobile-drawer-backdrop" onclick="toggleMobileNav()"></div>
+    <div class="mobile-drawer-content">
+      <div class="mobile-drawer-head">
+        <div class="brand">
+          <img src="{{ url_for('static', filename='img/logo.png') }}" alt="MannMitra Logo" class="brand-logo-img">
+          <b>Mann</b>Mitra
+        </div>
+        <button type="button" class="modal-close" onclick="toggleMobileNav()">×</button>
+      </div>
+      <div class="mobile-drawer-links">
+        {% if session.get('user_id') %}
+          <a href="{{ url_for('dashboard.dashboard_page') }}" onclick="toggleMobileNav()">📊 Dashboard</a>
+          <a href="{{ url_for('journal.journal_page') }}" onclick="toggleMobileNav()">📝 Private Journal</a>
+          <a href="{{ url_for('chat.chat_page') }}" onclick="toggleMobileNav()">🪶 Ask Madhav (AI Guide)</a>
+          <a href="{{ url_for('gita.gita_page') }}" onclick="toggleMobileNav()">📖 Gita Wisdom (3 Langs)</a>
+          <a href="{{ url_for('calm.calm_page') }}" onclick="toggleMobileNav()">🧘 Calm Mode & Audio</a>
+          <a href="{{ url_for('habits.habit_page') }}" onclick="toggleMobileNav()">⚡ Habits & Streaks</a>
+          <a href="{{ url_for('community.community_page') }}" onclick="toggleMobileNav()">🌱 Peer Community</a>
+          <a href="{{ url_for('insights.insights_page') }}" onclick="toggleMobileNav()">🧠 Mood Insights</a>
+          <a href="{{ url_for('report.weekly_report_page') }}" onclick="toggleMobileNav()">📑 Weekly Report</a>
+          <a href="{{ url_for('profile.profile_page') }}" onclick="toggleMobileNav()">👤 Profile & Languages</a>
+          {% if session.get('admin_logged_in') or session.get('role') == 'admin' %}
+            <a href="{{ url_for('admin.admin_dashboard') }}" onclick="toggleMobileNav()" style="color: var(--gold);">⚙️ Admin Dashboard</a>
+          {% endif %}
+          <a href="{{ url_for('auth.logout') }}" class="btn" style="margin-top:14px;">Logout</a>
+        {% else %}
+          <a href="{{ url_for('auth.login_page') }}">Login</a>
+          <a href="{{ url_for('auth.register_page') }}" class="btn" style="margin-top:14px;">Create Account</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Global Footer -->
+  <footer>
+    <div class="footer-content">
+      <div class="footer-brand">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="MannMitra Logo" class="footer-logo-img">
+        <b>MannMitra</b> · Mindful Mental Wellness Companion
+      </div>
+      <div class="footer-bottom-line">
+        <span class="db-indicator-chip" id="dbFooterChip">
+          <i></i> Database: Dual Mode (MongoDB Atlas & SQLite Resilient)
+        </span>
+        <span class="motto-tag">Reflect • Understand • Move Forward 🌿</span>
+        <a href="{{ url_for('admin.admin_login') }}" style="color: var(--muted); text-decoration: none; font-size: 11px; margin-left: 14px; opacity: 0.8;" title="Administrator Control Portal">🛡️ Admin Portal</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Global Toast Notification Element -->
+  <div class="mm-toast" id="globalToast"></div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

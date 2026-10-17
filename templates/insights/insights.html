@@ -1,0 +1,42 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="page-head">
+  <div><span class="tag">MANNMITRA MEMORY</span><h1>Your reflection profile.</h1><p>MannMitra connects your recent reflections, conversations and habits into simple self-reflection signals.</p></div>
+  <a class="btn" href="{{ url_for('chat.chat_page') }}">Talk to MannMitra →</a>
+</div>
+
+<div class="stats">
+  <div class="stat-card"><span>Reflections</span><b>{{ memory.total_reflections }}</b><small>journal entries</small></div>
+  <div class="stat-card"><span>Conversations</span><b>{{ memory.total_chats }}</b><small>recent chats</small></div>
+  <div class="stat-card"><span>Main theme</span><b>{{ memory.dominant_theme|replace('_',' ')|title }}</b><small>most recurring topic</small></div>
+  <div class="stat-card"><span>Trend</span><b>{{ memory.trend|replace('_',' ')|title }}</b><small>recent vs previous period</small></div>
+</div>
+
+<div class="dash-grid">
+<section class="panel">
+  <div class="panel-head"><div><span class="tag">PATTERN MAP</span><h2>What has been showing up?</h2></div><span class="badge">Personalized</span></div>
+  {% if memory.recurring_themes %}
+    {% for theme,count in memory.recurring_themes %}
+      <div class="pattern-row"><div><b>{{ theme|replace('_',' ')|title }}</b><small>{{ count }} reflection{% if count != 1 %}s{% endif %}</small></div><div class="pattern-bar"><i style="width: {{ [count * 100 // memory.total_reflections, 100]|min }}%"></i></div></div>
+    {% endfor %}
+  {% else %}<div class="empty">Add a few journal reflections and MannMitra will start detecting recurring themes.</div>{% endif %}
+</section>
+<section class="panel">
+  <div class="panel-head"><div><span class="tag">MOOD SIGNAL</span><h2>Recent direction</h2></div></div>
+  <div class="trend-box"><strong>{{ memory.trend|replace('_',' ')|title }}</strong><span>7-day average: {{ '%.2f'|format(memory.recent_average) }}</span><span>Previous period: {{ '%.2f'|format(memory.previous_average) }}</span></div>
+  <div class="guidance"><b>Dominant mood:</b> {{ memory.dominant_mood }} · <b>Habits:</b> {{ memory.habit_completed }}/{{ memory.habit_total }} completed</div>
+</section>
+</div>
+
+<section class="panel ai-panel">
+  <div class="panel-head"><div><span class="tag">PERSONALIZED AI GUIDE</span><h2>Small things you can try</h2></div><span class="badge">{{ memory.dominant_theme|replace('_',' ') }}</span></div>
+  <div class="suggestion-grid">{% for item in suggestions %}<div class="suggestion"><span>✦</span><p>{{ item }}</p></div>{% endfor %}</div>
+</section>
+
+<section class="panel">
+  <div class="panel-head"><div><span class="tag">GITA CONNECTION</span><h2>{{ wisdom.reference }}</h2></div><span class="badge">{{ wisdom.theme }}</span></div>
+  <p class="wisdom">{{ wisdom.short_meaning }}</p>
+  <div class="guidance"><b>Practical guidance:</b> {{ wisdom.practical_guidance }}</div>
+  <a class="btn light" href="{{ url_for('gita.gita_page') }}">Explore Gita Wisdom →</a>
+</section>
+{% endblock %}

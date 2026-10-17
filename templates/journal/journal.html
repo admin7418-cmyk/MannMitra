@@ -1,0 +1,72 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="journal-page">
+  <div class="page-head">
+    <div>
+      <span class="tag">PRIVATE MINDFUL JOURNAL</span>
+      <h1>Write it out.</h1>
+      <p>No perfect words needed. Give your thoughts a safe place to land and breathe.</p>
+    </div>
+    <span class="badge">{{ journals|length }} entries recorded</span>
+  </div>
+
+  <div class="journal-layout">
+    <!-- Left: Reflection Writing Form -->
+    <section class="panel journal-composer">
+      <div class="panel-head">
+        <div>
+          <span class="tag">NEW REFLECTION</span>
+          <h2>What’s on your mind?</h2>
+        </div>
+        <span class="badge">Private & Safe</span>
+      </div>
+
+      <form method="post">
+        <label>
+          Reflection Title
+          <input type="text" name="title" maxlength="80" placeholder="e.g. Feeling grateful today, Thoughts on exams..." autocomplete="off">
+        </label>
+
+        <label>
+          Your Thoughts & Feelings
+          <textarea name="body" rows="10" maxlength="4000" required placeholder="Write freely without judgment. How was your day? What is occupying your headspace right now?"></textarea>
+        </label>
+
+        <div class="form-foot">
+          <small style="color: var(--muted); font-size: 11px;">✦ Honest reflection brings profound clarity and peace of mind.</small>
+          <button class="btn" type="submit">Save reflection ✨</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Right: Previous Journal Entries -->
+    <section class="journal-history-panel">
+      <div class="mini-head" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font: 700 22px 'Playfair Display', serif; margin: 0; color: var(--text);">Your past entries</h2>
+        <span style="font-size: 11px; color: var(--muted);">Newest first</span>
+      </div>
+
+      {% for j in journals %}
+        <article class="journal" style="margin-bottom: 16px; padding: 20px;">
+          <div class="row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <span class="mood {{ j['mood']|lower }}">{{ j['mood'] }}</span>
+            <small style="color: var(--muted); font-size: 11px;">{{ j['created_at'][:16].replace('T', ' ') }}</small>
+          </div>
+          <h3 style="font: 700 18px 'Playfair Display', serif; margin: 0 0 8px; color: var(--text);">{{ j['title'] }}</h3>
+          <p style="color: var(--muted); font-size: 13px; line-height: 1.7; margin: 0 0 14px; white-space: pre-wrap;">{{ j['body'] }}</p>
+          <div class="entry-actions" style="display: flex; gap: 14px; align-items: center; border-top: 1px solid var(--line); padding-top: 10px;">
+            <a class="text-link" href="{{ url_for('journal.edit_page', journal_id=j['id']) }}">Edit entry</a>
+            <form method="post" action="{{ url_for('journal.delete_page', journal_id=j['id']) }}" style="margin: 0;">
+              <button class="text-btn" onclick="return confirm('Delete this journal entry?')" style="background: transparent; border: 0; color: #ef4444; font: 800 11px 'Manrope', sans-serif; cursor: pointer;">Delete</button>
+            </form>
+          </div>
+        </article>
+      {% else %}
+        <div class="empty" style="text-align: center; padding: 48px 20px; border: 1.5px dashed var(--line); border-radius: 20px; color: var(--muted);">
+          🌱 Your first reflection is waiting here. Pen down your first thought on the left!
+        </div>
+      {% endfor %}
+    </section>
+  </div>
+</div>
+{% endblock %}

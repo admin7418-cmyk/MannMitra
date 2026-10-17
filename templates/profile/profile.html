@@ -1,0 +1,102 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="profile-page">
+  <div class="page-head">
+    <div>
+      <span class="tag">USER PROFILE & PREFERENCES</span>
+      <h1 class="welcome-title" style="font-size: clamp(28px, 3.5vw, 42px); margin: 6px 0 10px;">Welcome, <span class="welcome-username">{{ user['name'] }}</span> <span class="welcome-emoji" title="Sacred Peacock Feather">🪶</span></h1>
+      <p>Manage your account settings, language preferences, and view your mental wellness achievements.</p>
+    </div>
+  </div>
+
+  <div class="dash-grid">
+    <!-- Left Column: User Card & Preferences Form -->
+    <div class="profile-column">
+      <section class="panel profile-card">
+        <div class="profile-avatar-wrap">
+          <div class="ai-avatar-large" style="width: 58px; height: 58px; border-radius: 18px; display: grid; place-items: center; background: linear-gradient(135deg, rgba(245, 197, 66, 0.2), rgba(42, 154, 143, 0.2)); border: 1.5px solid var(--gold); font-size: 28px; color: var(--gold);">
+            <span>🪶</span>
+          </div>
+          <div class="profile-info-block">
+            <h2>{{ user['name'] }}</h2>
+            <p>{{ user['email'] }}</p>
+            {% if user.get('role') == 'admin' %}
+              <span class="welcome-admin-pill" style="margin-top: 6px;">🛡️ ADMIN ACCOUNT</span>
+            {% else %}
+              <span class="badge" style="margin-top: 6px;">{{ user.get('role', 'user')|upper }} ACCOUNT</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="gita-divider" style="margin: 16px 0;"></div>
+
+        <div class="profile-details-list">
+          <div class="signal-row"><span>Account ID</span><b>#{{ user.get('id', 'N/A') }}</b></div>
+          <div class="signal-row"><span>Member Since</span><b>{{ (user.get('created_at') or '')[:10] }}</b></div>
+          <div class="signal-row"><span>Active Language</span><b>{{ prefs.get('language', 'en')|upper }}</b></div>
+        </div>
+      </section>
+
+      <section class="panel" style="margin-top: 16px;">
+        <div class="panel-head">
+          <div>
+            <span class="tag">PREFERENCES</span>
+            <h2>Language & Settings</h2>
+          </div>
+        </div>
+        <form method="post" class="profile-form">
+          <label>
+            Full Name
+            <input type="text" name="name" value="{{ user['name'] }}" required maxlength="80">
+          </label>
+
+          <label>
+            Preferred Chat & Guidance Language
+            <select name="language" class="form-select">
+              <option value="en" {% if prefs.get('language') == 'en' %}selected{% endif %}>🇬🇧 English (Default)</option>
+              <option value="hi" {% if prefs.get('language') == 'hi' %}selected{% endif %}>🇮🇳 शुद्ध हिंदी (Hindi Devanagari)</option>
+              <option value="hinglish" {% if prefs.get('language') == 'hinglish' %}selected{% endif %}>🔤 Hinglish (Conversational Hindi in Roman)</option>
+            </select>
+          </label>
+
+          <button class="btn" type="submit" style="margin-top: 14px; width: 100%;">Save Changes ✦</button>
+        </form>
+      </section>
+    </div>
+
+    <!-- Right Column: Stats & Gamification Badges -->
+    <div class="profile-column">
+      <div class="stats" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 16px;">
+        <div><span>Total Reflections</span><b>{{ journals_count }}</b><small>journal entries</small></div>
+        <div><span>Conversations</span><b>{{ chats_count }}</b><small>support chats</small></div>
+        <div><span>Reflection Streak</span><b>{{ streak }} <small>days</small></b><small>consecutive days</small></div>
+        <div><span>Habits Done</span><b>{{ completed_habits }} <small>/ {{ habits_count }}</small></b><small>routine consistency</small></div>
+      </div>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <span class="tag">GAMIFICATION</span>
+            <h2>Achievement Badges</h2>
+          </div>
+          <span class="badge">{{ badges|selectattr('unlocked')|list|length }} / {{ badges|length }} Unlocked</span>
+        </div>
+        <p style="color: var(--muted); font-size: 11px; margin-bottom: 18px;">Earn recognition as you build consistent self-reflection and habit discipline.</p>
+
+        <div class="badges-grid">
+          {% for b in badges %}
+          <div class="badge-card {% if b.unlocked %}unlocked{% else %}locked{% endif %}">
+            <div class="badge-icon">{{ b.icon }}</div>
+            <div class="badge-content">
+              <b>{{ b.title }}</b>
+              <p>{{ b.desc }}</p>
+              <span class="badge-status">{% if b.unlocked %}✓ Unlocked{% else %}🔒 In Progress{% endif %}</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<!-- Dedicated Print Header (Only visible when printing) -->
+<div class="print-report-header">
+  <h1 class="print-brand">MannMitra</h1>
+  <p class="print-sub">Personalized Mental Wellness & Mindful Reflection Report</p>
+  <div class="print-meta">
+    <span><b>User Name:</b> {{ session.get('user_name') or (user.get('name') if user and user.get else 'Friend') }}</span>
+    <span><b>Report Period:</b> {{ report.period }}</span>
+  </div>
+</div>
+
+<div class="page-head">
+  <div>
+    <span class="tag">WEEKLY AI WELLNESS REPORT</span>
+    <h1>Your week, in perspective.</h1>
+    <p>{{ report.period }} · Built from your reflections, conversations and habits.</p>
+  </div>
+  <button class="btn" onclick="window.print()">🖨️ Print report</button>
+</div>
+
+<div class="stats">
+  <div class="stat-card"><span>Reflections</span><b>{{ report.entries }}</b><small>this week</small></div>
+  <div class="stat-card"><span>Average mood</span><b>{{ '%.2f'|format(report.average) }}</b><small>tone score</small></div>
+  <div class="stat-card"><span>Main mood</span><b>{{ report.main_mood }}</b><small>most common</small></div>
+  <div class="stat-card"><span>Direction</span><b>{{ report.direction }}</b><small>weekly signal</small></div>
+</div>
+
+<div class="dash-grid">
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <span class="tag">AI OBSERVATION</span>
+        <h2>What stood out?</h2>
+      </div>
+      <span class="badge">Personalized</span>
+    </div>
+    <div class="report-highlight">
+      <strong>{{ report.direction }}</strong>
+      <p>{{ report.observation }}</p>
+    </div>
+    <div class="report-metrics">
+      <div><span>Main theme</span><b>{{ report.main_theme }}</b></div>
+      <div><span>Previous average</span><b>{{ '%.2f'|format(report.previous_average) }}</b></div>
+      <div><span>Change</span><b>{{ '%+.2f'|format(report.delta) }}</b></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <span class="tag">MOOD MIX</span>
+        <h2>This week's signals</h2>
+      </div>
+    </div>
+    {% if report.mood_counts %}
+      {% for mood, count in report.mood_counts.items() %}
+      <div class="pattern-row">
+        <div>
+          <b>{{ mood }}</b>
+          <small>{{ count }} reflection{% if count != 1 %}s{% endif %}</small>
+        </div>
+        <div class="pattern-bar">
+          <i style="width: {{ [count * 100 // report.entries, 100]|min }}%"></i>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">No reflections recorded this week yet.</div>
+    {% endif %}
+  </section>
+</div>
+
+<section class="panel ai-panel" style="margin-top: 14px;">
+  <div class="panel-head">
+    <div>
+      <span class="tag">NEXT WEEK</span>
+      <h2>Three gentle suggestions</h2>
+    </div>
+  </div>
+  <div class="suggestion-grid">
+    {% for item in report.suggestions %}
+    <div class="suggestion">
+      <span>✦</span>
+      <p>{{ item }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel" style="margin-top: 14px;">
+  <div class="panel-head">
+    <div>
+      <span class="tag">GITA WISDOM</span>
+      <h2>{{ report.wisdom.reference }}</h2>
+    </div>
+    <span class="badge">{{ report.wisdom.theme }}</span>
+  </div>
+  <p class="wisdom">{{ report.wisdom.short_meaning }}</p>
+  <div class="guidance"><b>Practical guidance:</b> {{ report.wisdom.practical_guidance }}</div>
+  <a class="btn light" href="{{ url_for('gita.gita_page') }}">Explore Gita Wisdom →</a>
+</section>
+{% endblock %}

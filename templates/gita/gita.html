@@ -1,0 +1,253 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<section class="gita-hero-pro">
+  <div class="gita-hero-copy">
+    <span class="eyebrow">🪶 GITA WISDOM · MANTRA FOR EVERYDAY LIFE</span>
+    <h1>Ancient wisdom,<br><em>made practical.</em></h1>
+    <p>Explore carefully selected Bhagavad Gita references for real situations — focus, stress, fear, discipline, failure, balance and peace.</p>
+    <div class="gita-hero-actions">
+      <button class="btn btn-lg" type="button" onclick="scrollToDailyWisdom()">Open today's wisdom <span>↓</span></button>
+      <button class="gita-ghost-btn" type="button" onclick="showSavedWisdom()">♡ <span id="savedCount">0</span> saved wisdom</button>
+    </div>
+  </div>
+  <div class="gita-feather-art" aria-hidden="true">
+    <img src="{{ url_for('static', filename='img/peacock_bansuri.jpg') }}" alt="Peacock Feather and Sacred Bansuri" class="gita-art-img">
+    <div class="feather-label">श्रीमद्भगवद्गीता</div>
+  </div>
+</section>
+
+<!-- Daily Wisdom Hero Card -->
+<section class="gita-daily-card" id="dailyWisdom">
+  <div class="daily-mark">✦</div>
+  <div class="daily-copy">
+    <div class="daily-kicker"><span>DAILY WISDOM</span><i>•</i><span>TAKE A MOMENT</span></div>
+    {% if daily %}
+      <div class="daily-ref">{{ daily['reference'] }}</div>
+      <div class="daily-sanskrit" style="font-size: 15px; font-weight: 700; color: var(--brand); margin: 6px 0 8px; white-space: pre-line; line-height: 1.6;">{{ daily.get('sanskrit', '') }}</div>
+      <h2 style="font-size: 17px; font-weight: 600; line-height: 1.5; margin-bottom: 8px;">{{ daily.get('active_meaning', daily.get('short_meaning', '')) }}</h2>
+      <p style="font-size: 11px; line-height: 1.6; color: var(--muted);">{{ daily.get('active_guidance', daily.get('practical_guidance', '')) }}</p>
+      <div class="daily-actions">
+        <button class="mini-action" type="button" onclick="saveWisdom('{{ daily['reference']|e }}')">♡ Save this</button>
+        <button class="mini-action" type="button" onclick="speakText(`{{ daily.get('sanskrit', '')|replace('\n', ' ')|e }}`)">🔊 Listen Shloka</button>
+        <a class="mini-action" href="{{ url_for('journal.journal_page') }}">✎ Reflect in Journal</a>
+      </div>
+    {% else %}
+      <h2>Your daily wisdom will appear here.</h2>
+    {% endif %}
+  </div>
+  <div class="daily-side">
+    <span>🪶</span>
+    <b>One thought.</b>
+    <small>One useful step.</small>
+  </div>
+</section>
+
+<!-- Language Switcher & Filter Head -->
+<section class="gita-library-head">
+  <div>
+    <span class="tag">THE WISDOM LIBRARY</span>
+    <h2>Find what your mind needs today.</h2>
+    <p>Select your language preference and search by situation or explore themes.</p>
+  </div>
+  
+  <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
+    <!-- 3-Language Switcher Pills -->
+    <div class="lang-pill-group">
+      <a class="lang-pill {% if lang == 'en' %}active{% endif %}" href="{{ url_for('gita.gita_page', theme=selected, q=q, lang='en') }}">🇬🇧 English</a>
+      <a class="lang-pill {% if lang == 'hi' %}active{% endif %}" href="{{ url_for('gita.gita_page', theme=selected, q=q, lang='hi') }}">🇮🇳 हिंदी</a>
+      <a class="lang-pill {% if lang == 'hinglish' %}active{% endif %}" href="{{ url_for('gita.gita_page', theme=selected, q=q, lang='hinglish') }}">🔤 Hinglish</a>
+    </div>
+
+    <div class="gita-stats-pro">
+      <div><b>{{ items|length }}</b><span>references</span></div>
+      <div><b>{{ themes|length }}</b><span>themes</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="gita-theme-strip">
+  <a class="theme-chip {% if selected == 'all' %}active{% endif %}" href="{{ url_for('gita.gita_page', lang=lang) }}">All wisdom</a>
+  {% for t in themes %}
+    <a class="theme-chip {% if t == selected %}active{% endif %}" href="{{ url_for('gita.gita_page', theme=t, lang=lang) }}">{{ t }}</a>
+  {% endfor %}
+</div>
+
+<form class="gita-search-pro" method="get">
+  <div class="gita-search-icon">⌕</div>
+  <input name="q" value="{{ q }}" placeholder="Search a feeling, situation, keyword in English or Hindi (चिंता, focus, peace)..." autocomplete="off">
+  {% if selected != 'all' %}<input type="hidden" name="theme" value="{{ selected }}">{% endif %}
+  <input type="hidden" name="lang" value="{{ lang }}">
+  <button type="submit">Explore wisdom <span>→</span></button>
+</form>
+
+<div class="gita-grid-pro" id="wisdomGrid">
+  {% for x in items %}
+  <article class="gita-card-pro" 
+           data-reference="{{ x['reference']|e }}" 
+           data-sanskrit="{{ x.get('sanskrit','')|e }}"
+           data-translit="{{ x.get('transliteration','')|e }}"
+           data-meaning="{{ x.get('active_meaning', x.get('short_meaning', ''))|e }}"
+           data-guidance="{{ x.get('active_guidance', x.get('practical_guidance', ''))|e }}">
+    <div class="gita-card-top">
+      <span class="gita-number">{{ '%02d'|format(loop.index) }}</span>
+      <span class="badge">{{ x['theme'] }}</span>
+      <button class="save-wisdom" type="button" aria-label="Save {{ x['reference'] }}" onclick="toggleSaved(this, '{{ x['reference']|e }}')">♡</button>
+    </div>
+    
+    <div class="gita-reference">{{ x['reference'] }}</div>
+    
+    <!-- Sanskrit Verse Block -->
+    {% if x.get('sanskrit') %}
+    <div class="shloka-sanskrit-box" style="font-size: 12px; font-weight: 700; color: var(--brand); margin: 8px 0 4px; white-space: pre-line; line-height: 1.5;">
+      {{ x['sanskrit'] }}
+    </div>
+    <div class="shloka-translit-box" style="font-size: 9px; color: var(--muted); margin-bottom: 8px; font-style: italic;">
+      {{ x.get('transliteration', '') }}
+    </div>
+    {% endif %}
+
+    <h3 style="font-size: 13px; line-height: 1.5; color: var(--text); margin-top: 4px;">{{ x.get('active_meaning', x.get('short_meaning', '')) }}</h3>
+    
+    <div class="gita-divider"></div>
+    <p class="gita-guidance"><strong>Practical guidance</strong>{{ x.get('active_guidance', x.get('practical_guidance', '')) }}</p>
+    
+    <div class="keywords-pro">
+      {% for k in x.get('keywords', [])[:4] %}
+      <span>#{{ k }}</span>
+      {% endfor %}
+    </div>
+
+    <div class="gita-card-bottom">
+      <button type="button" class="read-more" onclick="openWisdom(this)">Read & Listen <span>↗</span></button>
+      <button type="button" class="mini-action" style="padding: 4px 8px; font-size: 8px;" onclick="speakText(`{{ x.get('sanskrit', x.get('active_meaning', ''))|replace('\n', ' ')|e }}`)">🔊 Listen</button>
+    </div>
+  </article>
+  {% else %}
+    <div class="gita-empty-pro">
+      <span>🪶</span>
+      <h3>No wisdom found</h3>
+      <p>Try a different keyword or choose another theme.</p>
+      <a class="btn small" href="{{ url_for('gita.gita_page', lang=lang) }}">View all wisdom</a>
+    </div>
+  {% endfor %}
+</div>
+
+<div class="gita-note-pro">
+  <span>ⓘ</span>
+  <p><b>About this library:</b> MannMitra provides authentic Bhagavad Gita references as contemplative guidance in English, शुद्ध हिंदी, and Hinglish. It is designed for self-reflection and personal growth.</p>
+</div>
+
+<!-- Wisdom Detail Modal -->
+<div class="wisdom-modal" id="wisdomModal" hidden>
+  <div class="wisdom-modal-backdrop" onclick="closeWisdom()"></div>
+  <div class="wisdom-modal-card" role="dialog" aria-modal="true">
+    <button class="modal-close" onclick="closeWisdom()">×</button>
+    <span class="tag">GITA WISDOM</span>
+    <div class="modal-ref" id="modalRef"></div>
+    
+    <div id="modalSanskrit" style="font-size: 16px; font-weight: 700; color: var(--brand); margin: 12px 0 6px; white-space: pre-line; line-height: 1.6;"></div>
+    <div id="modalTranslit" style="font-size: 11px; color: var(--muted); margin-bottom: 12px; font-style: italic;"></div>
+    
+    <h2 id="modalMeaning" style="font-size: 15px; margin-bottom: 12px; line-height: 1.5;"></h2>
+    <div class="modal-line"></div>
+    <p id="modalDetail" style="font-size: 12px; line-height: 1.7; color: var(--text);"></p>
+    
+    <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+      <button class="btn" id="modalSave" onclick="saveModalWisdom()">♡ Save wisdom</button>
+      <button class="gita-ghost-btn" id="modalSpeakBtn" onclick="speakModal()">🔊 Listen Shloka</button>
+      <a class="gita-ghost-btn" href="{{ url_for('journal.journal_page') }}">✎ Reflect in Journal</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const savedKey = 'mannmitra-gita-saved';
+function getSaved(){ try { return JSON.parse(localStorage.getItem(savedKey) || '[]'); } catch(e){ return []; } }
+function setSaved(v){ localStorage.setItem(savedKey, JSON.stringify(v)); updateSavedCount(); }
+function updateSavedCount(){
+  const n = getSaved().length;
+  const el = document.getElementById('savedCount');
+  if (el) el.textContent = n;
+  document.querySelectorAll('.save-wisdom').forEach(b => {
+    const ref = b.closest('.gita-card-pro')?.dataset.reference;
+    b.classList.toggle('is-saved', getSaved().includes(ref));
+    b.textContent = getSaved().includes(ref) ? '♥' : '♡';
+  });
+}
+function saveWisdom(ref){
+  const s = getSaved();
+  if (!s.includes(ref)) s.push(ref);
+  setSaved(s);
+  toast('Wisdom saved to your library ✦');
+}
+function toggleSaved(btn, ref){
+  let s = getSaved();
+  if (s.includes(ref)){
+    s = s.filter(x => x !== ref);
+    toast('Removed from saved wisdom');
+  } else {
+    s.push(ref);
+    toast('Wisdom saved to your library ✦');
+  }
+  setSaved(s);
+}
+function showSavedWisdom(){
+  const s = getSaved();
+  if (!s.length){ toast('No saved wisdom yet — tap ♡ on a card'); return; }
+  document.querySelectorAll('.gita-card-pro').forEach(c => {
+    c.style.display = s.includes(c.dataset.reference) ? '' : 'none';
+  });
+  toast('Showing your saved wisdom');
+}
+function openWisdom(btn){
+  const c = btn.closest('.gita-card-pro');
+  document.getElementById('modalRef').textContent = c.dataset.reference;
+  document.getElementById('modalSanskrit').textContent = c.dataset.sanskrit || '';
+  document.getElementById('modalTranslit').textContent = c.dataset.translit || '';
+  document.getElementById('modalMeaning').textContent = c.dataset.meaning;
+  document.getElementById('modalDetail').textContent = c.dataset.guidance;
+  document.getElementById('modalSave').dataset.ref = c.dataset.reference;
+  document.getElementById('wisdomModal').hidden = false;
+  document.body.classList.add('modal-open');
+}
+function saveModalWisdom(){ saveWisdom(document.getElementById('modalSave').dataset.ref); }
+function closeWisdom(){
+  document.getElementById('wisdomModal').hidden = true;
+  document.body.classList.remove('modal-open');
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+}
+function scrollToDailyWisdom(){
+  document.getElementById('dailyWisdom').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function speakText(text) {
+  if (!('speechSynthesis' in window)) {
+    toast('Audio playback not supported in this browser.');
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'hi-IN'; // Sanskrit & Hindi voice synthesis
+  u.rate = 0.9;
+  window.speechSynthesis.speak(u);
+  toast('Reciting wisdom audio 🔊');
+}
+function speakModal() {
+  const sk = document.getElementById('modalSanskrit').textContent;
+  const m = document.getElementById('modalMeaning').textContent;
+  speakText(sk || m);
+}
+function toast(msg){
+  let t = document.querySelector('.mm-toast');
+  if (!t){
+    t = document.createElement('div');
+    t.className = 'mm-toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window.mmToastTimer);
+  window.mmToastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+updateSavedCount();
+</script>
+{% endblock %}

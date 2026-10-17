@@ -1,0 +1,268 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="dashboard-wrapper">
+  <!-- Welcome Hero -->
+  <section class="welcome-hero">
+    <div class="welcome-copy">
+      <div class="welcome-header-meta">
+        <span class="tag">YOUR MINDFUL COMPANION SPACE</span>
+        {% if session.get('admin_logged_in') or session.get('role') == 'admin' or (user and user.get and user.get('role') == 'admin') %}
+          <span class="welcome-admin-pill" title="Verified System Administrator">
+            🛡️ Admin Account
+          </span>
+        {% endif %}
+      </div>
+      <h1 class="welcome-title">Good day, <span class="welcome-username">{{ (user.get('name') if user and user.get else None) or session.get('user_name') or 'Friend' }}</span> <span class="welcome-emoji" title="Sacred Peacock Feather">🪶</span></h1>
+      <p style="max-width: 620px; color: var(--muted); font-size: 14px; line-height: 1.8;">Take a peaceful breath. Notice where you are right now, and choose one small, meaningful step forward.</p>
+      <div class="hero-actions">
+        <a class="btn btn-lg" href="{{ url_for('journal.journal_page') }}">✦ Write a reflection</a>
+        <a class="text-link" href="{{ url_for('chat.chat_page') }}">🪶 Ask Madhav →</a>
+      </div>
+    </div>
+    <div class="welcome-art-card">
+      <img src="{{ url_for('static', filename='img/peacock_bansuri.jpg') }}" alt="Sacred Peacock Feather and Bansuri" class="hero-art-img">
+      <div class="art-overlay-badge">
+        <span>🪶 Reflect • Understand • Move forward</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Daily Mind Check-In -->
+  <section class="checkin-card" id="dailyCheckin">
+    <div class="checkin-head">
+      <div>
+        <span class="tag">DAILY CHECK-IN</span>
+        <h2>How is your mind feeling today?</h2>
+        <p>No right or wrong answers. Choose the emotion closest to your present state.</p>
+      </div>
+      <button class="icon-btn" type="button" onclick="resetCheckin()" aria-label="Reset check-in">↻</button>
+    </div>
+    <div class="mood-choices">
+      <button data-mood="Good" data-icon="😊" onclick="chooseMood(this)">
+        <span>😊</span><b>Good</b><small>Feeling okay</small>
+      </button>
+      <button data-mood="Calm" data-icon="😌" onclick="chooseMood(this)">
+        <span>😌</span><b>Calm</b><small>Mind feels steady</small>
+      </button>
+      <button data-mood="Stressed" data-icon="😟" onclick="chooseMood(this)">
+        <span>😟</span><b>Stressed</b><small>A lot on my mind</small>
+      </button>
+      <button data-mood="Low" data-icon="😔" onclick="chooseMood(this)">
+        <span>😔</span><b>Low</b><small>Need some space</small>
+      </button>
+      <button data-mood="Frustrated" data-icon="😤" onclick="chooseMood(this)">
+        <span>😤</span><b>Frustrated</b><small>Something is bothering me</small>
+      </button>
+    </div>
+    <div class="checkin-result" id="checkinResult" hidden>
+      <div class="result-icon" id="resultIcon">🌱</div>
+      <div>
+        <strong id="resultTitle">A small step for today</strong>
+        <p id="resultText"></p>
+      </div>
+      <a class="btn small" id="checkinAction" href="{{ url_for('journal.journal_page') }}">Reflect</a>
+    </div>
+  </section>
+
+  <!-- Key Metrics Strip -->
+  <div class="stats">
+    <div><span>This week</span><b>{{ weekly_count }}</b><small>new reflections</small></div>
+    <div><span>7-day mood</span><b>{{ '%.2f'|format(weekly_avg) }}</b><small>average tone</small></div>
+    <div><span>Journal entries</span><b>{{ summary.total_entries }}</b><small>your reflections</small></div>
+    <div><span>Positive entries</span><b>{{ summary.positive }}</b><small>good moments</small></div>
+    <div><span>Current streak</span><b>{{ streak }} <small>days</small></b><small>journal consistency</small></div>
+    <div><span>Habits completed</span><b>{{ completed_habits }}</b><small>of {{ total_habits }} tracked</small></div>
+  </div>
+
+  <!-- Charts Grid -->
+  <div class="dash-grid">
+    <section class="panel premium-panel">
+      <div class="panel-head">
+        <div>
+          <span class="tag">LAST 14 ENTRIES</span>
+          <h2>Mood trend</h2>
+        </div>
+        <span class="badge">VADER tone</span>
+      </div>
+      {% if moods %}
+        <canvas id="chart"></canvas>
+      {% else %}
+        <div class="empty">Write your first journal entry to start your mood trend.</div>
+      {% endif %}
+    </section>
+
+    <section class="panel premium-panel">
+      <div class="panel-head">
+        <div>
+          <span class="tag">QUICK INSIGHT</span>
+          <h2>Mood mix</h2>
+        </div>
+      </div>
+      <div class="donut">
+        <div>
+          <b>{{ summary.total_entries }}</b>
+          <span>entries</span>
+        </div>
+        <canvas id="donut"></canvas>
+      </div>
+      <div class="legend">Positive: {{ summary.positive }} · Neutral: {{ summary.neutral }} · Low: {{ summary.low }}</div>
+    </section>
+  </div>
+
+  <!-- AI Companion Highlight -->
+  <section class="panel ai-panel premium-panel" style="margin-top: 14px;">
+    <div class="panel-head">
+      <div>
+        <span class="tag">ASK MADHAV</span>
+        <h2>Your personal insight</h2>
+      </div>
+      <span class="badge">{{ ai_profile.dominant_theme|replace("_", " ")|title }}</span>
+    </div>
+    <p class="wisdom">{{ ai_insight }}</p>
+    <div class="guidance">
+      <b>Pattern:</b> {{ ai_profile.dominant_mood }} tone · {{ ai_profile.journal_count }} reflections · {{ ai_profile.chat_count }} recent conversations
+    </div>
+    <a class="btn light" href="{{ url_for('chat.chat_page') }}">Continue with Madhav 🪶 →</a>
+  </section>
+
+  <!-- Lower Insights Grid -->
+  <div class="dash-grid lower" style="margin-top: 14px;">
+    <section class="panel premium-panel">
+      <div class="panel-head">
+        <div>
+          <span class="tag">TODAY'S WISDOM</span>
+          <h2>{{ wisdom['reference'] }}</h2>
+        </div>
+        <span class="badge">{{ wisdom['theme'] }}</span>
+      </div>
+      <p class="wisdom">{{ wisdom['short_meaning'] }}</p>
+      <div class="guidance"><b>Try this:</b> {{ wisdom['practical_guidance'] }}</div>
+      <a class="btn light" href="{{ url_for('gita.gita_page') }}">Explore Gita Wisdom →</a>
+    </section>
+
+    <section class="panel premium-panel">
+      <div class="panel-head">
+        <div>
+          <span class="tag">RECENT</span>
+          <h2>Latest reflection</h2>
+        </div>
+        <a class="text-link" href="{{ url_for('journal.journal_page') }}">View all</a>
+      </div>
+      {% if latest %}
+        <span class="mood {{ latest['mood']|lower }}">{{ latest['mood'] }}</span>
+        <h3>{{ latest['title'] }}</h3>
+        <p class="muted">{{ latest['body'][:180] }}{% if latest['body']|length>180 %}…{% endif %}</p>
+      {% else %}
+        <div class="empty">No reflections yet.</div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+
+{% if moods %}
+<script>
+const d = {{ moods|tojson }};
+new Chart(document.getElementById('chart'), {
+  type: 'line',
+  data: {
+    labels: d.map(x => x.date),
+    datasets: [{
+      data: d.map(x => x.score),
+      tension: 0.38,
+      fill: true,
+      borderWidth: 2,
+      pointRadius: 3
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { min: -1, max: 1 },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+new Chart(document.getElementById('donut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Positive', 'Neutral', 'Low'],
+    datasets: [{
+      data: [{{ summary.positive }}, {{ summary.neutral }}, {{ summary.low }}],
+      borderWidth: 0
+    }]
+  },
+  options: {
+    cutout: '72%',
+    plugins: { legend: { display: false } }
+  }
+});
+</script>
+{% endif %}
+
+<script>
+const checkins = {
+  Good: {
+    icon: '😊',
+    title: 'Keep the good energy',
+    text: 'Enjoy the moment and notice one thing that is going well today.',
+    action: '{{ url_for("journal.journal_page") }}'
+  },
+  Calm: {
+    icon: '😌',
+    title: 'Protect this calm',
+    text: 'Use this steady feeling for one focused task, a quiet walk, or a few minutes of reflection.',
+    action: '{{ url_for("habits.habit_page") }}'
+  },
+  Stressed: {
+    icon: '🌿',
+    title: 'Let us make it smaller',
+    text: 'Pick only one thing you can handle next. You do not need to solve everything at once.',
+    action: '{{ url_for("chat.chat_page") }}'
+  },
+  Low: {
+    icon: '🤍',
+    title: 'Be gentle with yourself',
+    text: 'You can slow down. Writing a few honest lines can help you understand what you need right now.',
+    action: '{{ url_for("journal.journal_page") }}'
+  },
+  Frustrated: {
+    icon: '🌱',
+    title: 'Pause before pushing forward',
+    text: 'Take a short pause, name what is bothering you, and choose one constructive next step.',
+    action: '{{ url_for("chat.chat_page") }}'
+  }
+};
+
+function chooseMood(btn) {
+  document.querySelectorAll('.mood-choices button').forEach(x => x.classList.remove('selected'));
+  btn.classList.add('selected');
+  const m = checkins[btn.dataset.mood];
+  document.getElementById('resultIcon').textContent = m.icon;
+  document.getElementById('resultTitle').textContent = m.title;
+  document.getElementById('resultText').textContent = m.text;
+  document.getElementById('checkinAction').href = m.action;
+  document.getElementById('checkinResult').hidden = false;
+  localStorage.setItem('mannmitra-checkin', JSON.stringify({
+    date: new Date().toDateString(),
+    mood: btn.dataset.mood
+  }));
+}
+
+function resetCheckin() {
+  localStorage.removeItem('mannmitra-checkin');
+  document.querySelectorAll('.mood-choices button').forEach(x => x.classList.remove('selected'));
+  document.getElementById('checkinResult').hidden = true;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const x = JSON.parse(localStorage.getItem('mannmitra-checkin'));
+    if (x && x.date === new Date().toDateString()) {
+      const b = document.querySelector('[data-mood="' + x.mood + '"]');
+      if (b) chooseMood(b);
+    }
+  } catch(e) {}
+});
+</script>
+{% endblock %}

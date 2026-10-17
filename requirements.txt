@@ -1,0 +1,10 @@
+Flask>=3.1,<4
+vaderSentiment>=3.3,<4
+pymongo[srv]>=4.10,<5
+dnspython>=2.6.0
+PyJWT>=2.9,<3
+python-dotenv>=1.0,<2
+pytest>=8,<9
+gunicorn>=21,<24
+
+

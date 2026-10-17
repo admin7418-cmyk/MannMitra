@@ -1,0 +1,34 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+.venv/
+env/
+venv/
+ENV/
+
+# Sensitive Environment Configurations & Secrets
+.env
+.env.local
+.env.*.local
+
+# Databases & Backups
+*.db
+*.sqlite
+*.sqlite3
+mannmitra.db
+
+# Temporary & Scratch Files
+scratch/
+*.log
+*.tmp
+
+# Operating System & IDE Artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+

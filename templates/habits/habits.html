@@ -1,0 +1,94 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="habits-page">
+  <div class="page-head">
+    <div>
+      <span class="tag">HABIT TRACKER & GAMIFICATION</span>
+      <h1>Small steps, everyday discipline.</h1>
+      <p>Build consistent wellness routines one day at a time. Consistency over perfection.</p>
+    </div>
+  </div>
+
+  <div class="stats" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
+    <div><span>Completed Today</span><b>{{ completed_count }} <small>/ {{ habits|length }}</small></b><small>active habits</small></div>
+    <div><span>Best Streak</span><b>{{ max_streak }} <small>days</small></b><small>daily discipline</small></div>
+    <div><span>Badges Unlocked</span><b>{{ badges|selectattr('unlocked')|list|length }} <small>/ {{ badges|length }}</small></b><small>achievements</small></div>
+  </div>
+
+  <div class="dash-grid">
+    <!-- Left Column: Habits List & Add Form -->
+    <section class="panel habit-panel">
+      <div class="panel-head">
+        <div>
+          <span class="tag">YOUR ROUTINE</span>
+          <h2>Today's Habits</h2>
+        </div>
+        <span class="badge">{{ habits|length }} Total</span>
+      </div>
+
+      <form method="post" class="habit-add" style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <input name="name" maxlength="100" placeholder="e.g. 10 mins reading, 5 mins meditation, morning walk..." required style="flex: 1;">
+        <button class="btn" type="submit">+ Add Habit</button>
+      </form>
+
+      <div class="habit-items">
+        {% for h in habits %}
+        <div class="habit-row">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <form method="post" style="margin: 0;">
+              <input type="hidden" name="toggle_id" value="{{ h['id'] }}">
+              <button type="submit" class="habit-check-btn {{ 'done' if h['completed'] else '' }}" title="Toggle completion">
+                {{ '✓' if h['completed'] else '' }}
+              </button>
+            </form>
+
+            <div class="habit-copy">
+              <b style="font-size: 14px; color: {% if h['completed'] %}var(--muted){% else %}var(--text){% endif %}; {% if h['completed'] %}text-decoration: line-through; opacity: 0.75;{% endif %}">{{ h['name'] }}</b>
+              <div style="display: flex; gap: 8px; align-items: center; margin-top: 3px;">
+                <small style="color: var(--muted); font-size: 10px;">Started {{ h['date'] }}</small>
+                {% if h.get('streak', 0) > 0 %}
+                <span class="badge" style="font-size: 9px; background: rgba(245, 197, 66, 0.15); color: var(--gold); border-color: rgba(245, 197, 66, 0.3);">🔥 {{ h['streak'] }} days streak</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <form method="post" action="{{ url_for('habits.delete_habit_action', habit_id=h['id']) }}" onsubmit="return confirm('Delete this habit?');" style="margin: 0;">
+            <button type="submit" class="icon-btn" title="Delete habit" style="cursor: pointer; border: none; background: transparent; color: var(--muted); font-size: 14px;">✕</button>
+          </form>
+        </div>
+        {% else %}
+        <div class="empty" style="text-align: center; padding: 48px 20px; border: 1.5px dashed var(--line); border-radius: 20px; color: var(--muted);">
+          🌱 Add your first mindful habit above to begin your consistency streak!
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Right Column: Achievement Badges -->
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <span class="tag">ACHIEVEMENTS</span>
+          <h2>Wellness Badges</h2>
+        </div>
+        <span class="badge">{{ badges|selectattr('unlocked')|list|length }} Earned</span>
+      </div>
+      <p style="font-size: 11px; color: var(--muted); margin-bottom: 16px;">Milestones unlocked as you build positive habits and daily reflection.</p>
+
+      <div class="badges-grid" style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+        {% for b in badges %}
+        <div class="badge-card {% if b.unlocked %}unlocked{% else %}locked{% endif %}">
+          <div class="badge-icon">{{ b.icon }}</div>
+          <div class="badge-content" style="flex: 1;">
+            <b>{{ b.title }}</b>
+            <p>{{ b.desc }}</p>
+          </div>
+          <span class="badge">{% if b.unlocked %}✓ Done{% else %}🔒 Locked{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

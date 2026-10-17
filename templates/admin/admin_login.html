@@ -1,0 +1,54 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<section class="auth-page admin-auth-page">
+  <div class="auth-visual admin-visual">
+    <div class="mark">🛡️</div>
+    <div>
+      <span class="tag" style="color: #f5c542; letter-spacing: 0.16em;">SECURITY & MODERATION</span>
+      <h2>Administrator Control Center</h2>
+      <p>Authorized access to community content moderation, real-time database cluster telemetry, user analytics, and platform oversight.</p>
+    </div>
+    <div class="auth-features">
+      <div class="auth-feature"><span>🛡️</span> Dual-mode database cluster oversight (Atlas & SQLite)</div>
+      <div class="auth-feature"><span>🚩</span> Single-click community safety & report moderation</div>
+      <div class="auth-feature"><span>📊</span> Student reflective growth & engagement metrics</div>
+    </div>
+  </div>
+
+  <div class="auth-card admin-auth-card">
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom: 4px;">
+      <span class="badge" style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">RESTRICTED PORTAL</span>
+    </div>
+    <h1 style="margin: 8px 0 6px;">Admin Sign In</h1>
+    <p class="auth-sub">Enter administrative credentials to unlock the moderation console.</p>
+
+    <form method="post" action="{{ url_for('admin.admin_login') }}">
+      <div class="field">
+        <label>Admin Username / Email
+          <input name="username" type="text" placeholder="admin" value="admin" autocomplete="username" required>
+        </label>
+      </div>
+
+      <div class="field">
+        <label>Admin Password
+          <input name="password" type="password" placeholder="Enter administrative password" autocomplete="current-password" required>
+        </label>
+      </div>
+
+      <button class="btn btn-admin-submit" type="submit">
+        <span>Unlock Admin Portal</span> <span>🛡️</span>
+      </button>
+    </form>
+
+    <div style="margin-top: 20px; padding: 12px 14px; border-radius: 12px; background: rgba(245, 197, 66, 0.1); border: 1px dashed rgba(245, 197, 66, 0.35); font-size: 11px; color: var(--text);">
+      <strong style="color: var(--gold);">Demo Credentials:</strong><br>
+      Username: <code style="background: var(--surface2); padding: 2px 6px; border-radius: 4px;">admin</code><br>
+      Password: <code style="background: var(--surface2); padding: 2px 6px; border-radius: 4px;">Admin@118119</code>
+    </div>
+
+    <p style="margin-top: 18px; text-align: center; font-size: 11px;">
+      <a href="{{ url_for('auth.login_page') }}" style="color: var(--brand); font-weight: 700;">← Return to Student Login</a>
+    </p>
+  </div>
+</section>
+{% endblock %}

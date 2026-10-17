@@ -1,0 +1,118 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="admin-page">
+  <div class="page-head">
+    <div>
+      <span class="tag">ADMINISTRATION & CONTROL</span>
+      <h1>System Overview & Moderation</h1>
+      <p>Manage community content, monitor platform activity, and verify database connectivity.</p>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <span class="welcome-admin-pill">🛡️ ADMINISTRATOR MODE</span>
+      <a href="{{ url_for('admin.admin_logout') }}" class="btn small" style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); font-weight: 700;">Exit Admin ✕</a>
+    </div>
+  </div>
+
+  <!-- DB Status Banner -->
+  <section class="panel db-status-card" style="margin-bottom: 18px; border-left: 5px solid #3c7d61;">
+    <div class="panel-head" style="margin-bottom: 8px;">
+      <div>
+        <span class="tag">DATABASE STATUS</span>
+        <h2 style="display:flex; align-items:center; gap:10px;">
+          {{ db_status.engine }}
+          <span class="live-pill"><i></i> Connected & Active</span>
+        </h2>
+      </div>
+      <span class="badge">Mode: {{ db_status.mode|upper }}</span>
+    </div>
+    <p style="color: var(--muted); font-size: 11px; margin: 0;">
+      Database target: <b>{{ db_status.db_name }}</b> · 
+      {% if db_status.mode == 'mongo' %}
+        Connected to MongoDB Atlas with auto-indexing.
+      {% else %}
+        Running on local SQLite adapter. To connect to MongoDB Atlas, add your <code>MONGO_URI</code> in <code>.env</code>.
+      {% endif %}
+    </p>
+  </section>
+
+  <!-- Platform Metrics -->
+  <div class="stats" style="margin-bottom: 22px;">
+    <div><span>Registered Users</span><b>{{ total_users }}</b><small>active accounts</small></div>
+    <div><span>Journal Reflections</span><b>{{ total_journals }}</b><small>private reflections</small></div>
+    <div><span>Conversations</span><b>{{ total_chats }}</b><small>support chats</small></div>
+    <div><span>Community Posts</span><b>{{ total_posts }}</b><small>peer thoughts</small></div>
+    <div><span>Reported Posts</span><b style="color:{% if reported %}#b84a39{% else %}#2d5f4d{% endif %};">{{ reported|length }}</b><small>flagged for review</small></div>
+  </div>
+
+  <div class="dash-grid">
+    <!-- Community Moderation Panel -->
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <span class="tag">MODERATION</span>
+          <h2>Community Content Review</h2>
+        </div>
+        <span class="badge">{{ posts|length }} Recent Posts</span>
+      </div>
+      <p style="color:var(--muted); font-size: 11px; margin-bottom: 14px;">Review peer reflections and moderate reported or inappropriate content.</p>
+
+      {% if posts %}
+        <div class="moderation-list">
+          {% for p in posts %}
+          <div class="moderation-item" style="padding: 14px; border: 1px solid var(--line); border-radius: 14px; margin-bottom: 10px; background: var(--surface2);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <small style="color: var(--muted); font-size: 10px;">User #{{ p.get('user_id', 'Anon') }} · {{ p.get('created_at', '')[:16].replace('T', ' ') }}</small>
+              <div style="display: flex; gap: 6px;">
+                <span class="badge" style="font-size: 8px;">❤️ {{ p.get('likes', 0) }}</span>
+                {% if p.get('reported', 0) > 0 %}
+                <span class="badge" style="background:#fde8e5; color:#ba392a; font-size: 8px;">🚩 {{ p.get('reported', 0) }} Flagged</span>
+                {% endif %}
+              </div>
+            </div>
+            <p style="font-size: 11px; line-height: 1.6; margin: 0 0 10px; color: var(--text);">{{ p['message'] }}</p>
+            <form method="post" action="{{ url_for('admin.admin_delete_post', post_id=p['id']) }}" onsubmit="return confirm('Delete this post permanently?');">
+              <button class="btn small" style="background:#ba392a; padding: 6px 12px; font-size: 9px;">Delete Post 🗑️</button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty">No community posts to moderate.</div>
+      {% endif %}
+    </section>
+
+    <!-- User Directory -->
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <span class="tag">DIRECTORY</span>
+          <h2>Registered Students</h2>
+        </div>
+        <span class="badge">{{ users|length }} Listed</span>
+      </div>
+      <p style="color:var(--muted); font-size: 11px; margin-bottom: 14px;">Platform users, account creation timestamps, and roles.</p>
+
+      <div class="user-table-wrap">
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--line); text-align: left; color: var(--muted); font-size: 9px; text-transform: uppercase;">
+              <th style="padding: 8px 4px;">User</th>
+              <th style="padding: 8px 4px;">Email</th>
+              <th style="padding: 8px 4px;">Joined</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr style="border-bottom: 1px solid var(--line);">
+              <td style="padding: 10px 4px; font-weight: 700; color: var(--brand);">{{ u['name'] }}</td>
+              <td style="padding: 10px 4px; color: var(--muted);">{{ u['email'] }}</td>
+              <td style="padding: 10px 4px; color: var(--muted); font-size: 10px;">{{ (u.get('created_at') or '')[:10] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

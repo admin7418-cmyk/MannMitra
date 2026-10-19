@@ -1,5 +1,5 @@
 SECRET_KEY=replace-with-a-long-random-secret
 # Leave MONGO_URI empty to use local SQLite development mode.
 # Add your MongoDB Atlas connection string to switch storage to MongoDB.
-MONGO_URI=
+MONGO_URI=mongodb+srv://admin7418_db_user:<db_password>@cluster0.l5plvj9.mongodb.net/?compressors=zlib
 DB_NAME=mannmitra

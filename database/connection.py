@@ -83,6 +83,7 @@ def init_database():
             db['journals'].create_index([('user_id', 1), ('created_at', -1)])
             db['chats'].create_index([('user_id', 1), ('created_at', -1)])
             db['community_posts'].create_index([('created_at', -1)])
+            seed_admin_user()
             return
         except Exception as e:
             print(f"[MannMitra] Error initializing MongoDB indexes: {e}")
@@ -201,7 +202,10 @@ def seed_admin_user():
                     'created_at': now
                 })
             else:
-                db.users.update_one({'_id': existing['_id']}, {'$set': {'password': admin_hash, 'role': 'admin'}})
+                update_fields = {'password': admin_hash, 'role': 'admin'}
+                if not existing.get('id'):
+                    update_fields['id'] = 'admin_master'
+                db.users.update_one({'_id': existing['_id']}, {'$set': update_fields})
         except Exception as e:
             print(f"[MannMitra] Error seeding admin in Mongo: {e}")
     else:

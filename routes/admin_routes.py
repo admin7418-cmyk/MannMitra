@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from models.user_model import find_by_id, find_by_identifier, all_users
 from models.community_model import recent as all_posts, delete_post, get_reported, count_all as count_posts
 from models.chat_model import count_all as count_chats
-from database.connection import get_db_status, get_db, get_mongo_db, check_mongo_available
+from database.connection import get_db_status, get_db, get_mongo_db, check_mongo_available, seed_admin_user
 from services.auth_service import authenticate
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -22,12 +22,19 @@ def admin_login():
             session['admin_username'] = 'admin'
             session.permanent = True
             admin_user = find_by_identifier('admin')
-            if admin_user:
-                session['admin_id'] = admin_user.get('id')
-                if not session.get('user_id'):
-                    session['user_id'] = admin_user.get('id')
-                    session['user_name'] = admin_user.get('name')
-                    session['role'] = 'admin'
+            if not admin_user:
+                seed_admin_user()
+                admin_user = find_by_identifier('admin')
+
+            admin_id = (admin_user.get('id') if admin_user else None) or 'admin_master'
+            admin_name = (admin_user.get('name') if admin_user else None) or 'admin'
+            admin_email = (admin_user.get('email') if admin_user else None) or 'admin@mannmitra.com'
+
+            session['admin_id'] = admin_id
+            session['user_id'] = admin_id
+            session['user_name'] = admin_name
+            session['user_email'] = admin_email
+            session['role'] = 'admin'
             flash('Admin authentication successful. Welcome to Admin Control Center.', 'success')
             return redirect(url_for('admin.admin_dashboard'))
 
@@ -38,10 +45,10 @@ def admin_login():
             session['admin_username'] = user.get('name')
             session['admin_id'] = user.get('id')
             session.permanent = True
-            if not session.get('user_id'):
-                session['user_id'] = user.get('id')
-                session['user_name'] = user.get('name')
-                session['role'] = 'admin'
+            session['user_id'] = user.get('id')
+            session['user_name'] = user.get('name')
+            session['user_email'] = user.get('email')
+            session['role'] = 'admin'
             flash('Admin authentication successful. Welcome to Admin Control Center.', 'success')
             return redirect(url_for('admin.admin_dashboard'))
 
@@ -51,9 +58,7 @@ def admin_login():
 
 @admin_bp.route('/logout')
 def admin_logout():
-    session.pop('admin_logged_in', None)
-    session.pop('admin_username', None)
-    session.pop('admin_id', None)
+    session.clear()
     flash('Administrator session safely terminated.', 'info')
     return redirect(url_for('admin.admin_login'))
 

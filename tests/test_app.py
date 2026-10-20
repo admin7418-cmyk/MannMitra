@@ -132,6 +132,14 @@ class MannMitraTestCase(unittest.TestCase):
         }, follow_redirects=True)
         self.assertEqual(res_post_admin.status_code, 200)
         self.assertIn(b"ADMINISTRATOR MODE", res_post_admin.data)
+        self.assertIn(b"Main Platform", res_post_admin.data)
+
+        # Admin also has user session access to main platform
+        with self.client.session_transaction() as sess:
+            self.assertTrue(sess.get('admin_logged_in'))
+            self.assertIsNotNone(sess.get('user_id'))
+        res_dash = self.client.get("/dashboard")
+        self.assertEqual(res_dash.status_code, 200)
 
         # 4. Profile page accessible by user
         with self.client.session_transaction() as sess:

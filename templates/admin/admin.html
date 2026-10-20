@@ -8,6 +8,7 @@
       <p>Manage community content, monitor platform activity, and verify database connectivity.</p>
     </div>
     <div style="display: flex; gap: 10px; align-items: center;">
+      <a href="{{ url_for('dashboard.dashboard_page') }}" class="btn small" style="background: var(--surface); color: var(--text); border: 1px solid var(--line); font-weight: 700;">← Main Platform</a>
       <span class="welcome-admin-pill">🛡️ ADMINISTRATOR MODE</span>
       <a href="{{ url_for('admin.admin_logout') }}" class="btn small" style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); font-weight: 700;">Exit Admin ✕</a>
     </div>

@@ -45,7 +45,7 @@ def admin_login():
             flash('Admin authentication successful. Welcome to Admin Control Center.', 'success')
             return redirect(url_for('admin.admin_dashboard'))
 
-        flash('Invalid Admin credentials. Access denied. (Only admin / Admin@118119 is permitted)', 'error')
+        flash('Invalid Admin credentials.', 'error')
 
     return render_template('admin/admin_login.html')
 

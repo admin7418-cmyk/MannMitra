@@ -1,4 +1,5 @@
 import unittest
+
 from app import app
 from services.chat_service import generate_reply
 from services.safety_service import needs_human_support
@@ -224,6 +225,12 @@ class MannMitraTestCase(unittest.TestCase):
         self.assertIn('.report-highlight', css)
         self.assertIn('.pattern-row', css)
         self.assertIn('.suggestion', css)
+
+    def test_journal_routes_support_uuid(self):
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = 'test_user_1'
+        res = self.client.get("/journal/edit/d4f5e6a7-3b2a-4c8d-b35b-d368e7343e0a")
+        self.assertIn(res.status_code, [200, 302])
 
 if __name__ == '__main__':
     unittest.main()

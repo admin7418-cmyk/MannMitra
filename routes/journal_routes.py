@@ -13,7 +13,7 @@ def journal_page():
         if not body: flash("Please write something first.","error"); return redirect(url_for("journal.journal_page"))
         score,mood=analyze(body); create(user,title,body,mood,score,datetime.now().isoformat()); flash("Journal saved ✨","success"); return redirect(url_for("journal.journal_page"))
     return render_template("journal/journal.html",journals=all_for_user(user))
-@journal_bp.route("/journal/edit/<int:journal_id>",methods=["GET","POST"])
+@journal_bp.route("/journal/edit/<journal_id>",methods=["GET","POST"])
 def edit_page(journal_id):
     user=uid()
     if not user:return redirect(url_for("auth.login_page"))
@@ -24,7 +24,7 @@ def edit_page(journal_id):
         if not body: flash("Please write something first.","error"); return render_template("journal/edit.html",journal=journal)
         score,mood=analyze(body); update(journal_id,user,title,body,mood,score,datetime.now().isoformat()); flash("Journal updated successfully.","success"); return redirect(url_for("journal.journal_page"))
     return render_template("journal/edit.html",journal=journal)
-@journal_bp.route("/journal/delete/<int:journal_id>",methods=["POST"])
+@journal_bp.route("/journal/delete/<journal_id>",methods=["POST"])
 def delete_page(journal_id):
     user=uid()
     if not user:return redirect(url_for("auth.login_page"))

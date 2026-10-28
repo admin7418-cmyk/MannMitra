@@ -15,6 +15,113 @@ class BaseLLMProvider:
     def generate(self, prompt, context=None, **kwargs):
         raise NotImplementedError
 
+
+class GeminiProvider(BaseLLMProvider):
+    """
+    Cloud Generative AI provider using Google's free Gemini API.
+    Features:
+    - Zero cost on Google AI Studio's free tier.
+    - Expressive, empathetic counseling & broad general knowledge.
+    - Native support for English, Hindi, and Hinglish.
+    - Automatically contextualizes Bhagavad Gita verses into guidance.
+    - Gracefully returns None if API key is not configured, rate-limited, or network is offline.
+    """
+    def __init__(self, api_key=None, model_name=None):
+        self.api_key = api_key or os.getenv("GEMINI_API_KEY", "").strip()
+        self.model_name = model_name or os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+        self._client = None
+
+    def is_available(self):
+        if os.getenv("TESTING") == "True":
+            return False
+        key = self.api_key or os.getenv("GEMINI_API_KEY", "").strip()
+        return bool(key)
+
+    def _get_client(self):
+        key = self.api_key or os.getenv("GEMINI_API_KEY", "").strip()
+        if not key:
+            return None
+        if self._client is None:
+            try:
+                from google import genai
+                self._client = genai.Client(api_key=key)
+            except Exception:
+                return None
+        return self._client
+
+    def generate(self, prompt, context=None, **kwargs):
+        if not self.is_available():
+            return None
+
+        client = self._get_client()
+        if not client:
+            return None
+
+        from google.genai import types
+
+        context = context or {}
+        user_text = kwargs.get("user_text", prompt)
+        gita_verse = kwargs.get("gita_verse")
+        lang = kwargs.get("lang", "en")
+
+        if lang in ["hi", "hindi"]:
+            lang_desc = "natural, comforting Hindi in Devanagari script (शुद्ध, त्रुटिरहित हिंदी)."
+        elif lang in ["hinglish", "roman"]:
+            lang_desc = "warm, friendly conversational Hinglish (Roman script, as spoken naturally by students)."
+        else:
+            lang_desc = "fluent, compassionate, articulate English."
+
+        system_instruction = (
+            "You are Madhav, an empathetic and mindful student wellness companion on the platform MannMitra.\n"
+            "Your personality: Calm, reassuring, respectful, supportive, and kind. You speak like a wise and loving friend.\n"
+            "- You are inspired by the timeless philosophical wisdom of the Shrimad Bhagavad Gita.\n"
+            "- You NEVER claim to be Lord Krishna or God. You are a supportive human-like mentor and fellow student companion.\n"
+            "- You NEVER act as a clinical doctor or diagnose mental disorders.\n"
+            "Guidelines:\n"
+            "1. If the user shares any stress, anxiety, exam pressure, sadness, loneliness, or life difficulty, validate their feelings with warmth.\n"
+            "2. If a Bhagavad Gita verse context is provided, naturally weave its core life lesson into your practical advice.\n"
+            "3. If the user asks general or technical questions, answer accurately and politely with broad general knowledge.\n"
+            f"4. Keep your answer concise (2 to 3 short paragraphs or 3 to 5 sentences). Reply in {lang_desc}"
+        )
+
+        user_content = user_text
+        if gita_verse:
+            ref = gita_verse.get("reference", "Bhagavad Gita")
+            sanskrit = gita_verse.get("sanskrit", "")
+            meaning = gita_verse.get("active_meaning") or gita_verse.get("simple_meaning", "")
+            guidance = gita_verse.get("active_guidance") or gita_verse.get("practical_interpretation", "")
+            user_content += (
+                f"\n\n[CONTEXT: Relevant Bhagavad Gita Verse for this issue]\n"
+                f"Reference: {ref}\n"
+                f"Sanskrit: {sanskrit}\n"
+                f"Meaning: {meaning}\n"
+                f"Core Wisdom: {guidance}\n"
+                f"(Please integrate this wisdom smoothly into your empathetic reply in simple words.)"
+            )
+
+        models_to_try = [self.model_name, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+        seen = set()
+        models_to_try = [m for m in models_to_try if not (m in seen or seen.add(m))]
+
+        for model in models_to_try:
+            try:
+                resp = client.models.generate_content(
+                    model=model,
+                    contents=user_content,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        temperature=0.7,
+                        max_output_tokens=400,
+                    )
+                )
+                if resp and resp.text and len(resp.text.strip()) > 15:
+                    return resp.text.strip()
+            except Exception:
+                continue
+
+        return None
+
+
 class OllamaProvider(BaseLLMProvider):
     """
     High-performance local LLM provider via Ollama.
@@ -561,34 +668,59 @@ class LocalSmartGenerator(BaseLLMProvider):
 
 class LocalLLM:
     """
-    Central local LLM coordinator with resilient multi-tier fallback.
-    Automatically prioritizes Ollama (hardware accelerated on NVIDIA GPU) ->
-    llama.cpp (local GGUF) -> local smart synthesis engine.
-    Never drops response or returns empty even if Ollama disconnects or times out.
+    Central LLM coordinator with resilient multi-tier fallback.
+    Automatically prioritizes:
+    1. Cloud Free AI (Google Gemini API when GEMINI_API_KEY is configured)
+    2. Local Ollama (hardware accelerated on GPU)
+    3. llama.cpp (local GGUF)
+    4. LocalSmartGenerator (100% offline, zero-dependency engine)
+    Never drops response or crashes even if cloud API or Ollama is offline.
     """
+    _gemini_provider = None
     _ollama_provider = None
     _llama_provider = None
     _smart_generator = None
 
     @classmethod
     def get_provider(cls):
+        # 1. Cloud Gemini API if configured
+        if cls._gemini_provider is None:
+            cls._gemini_provider = GeminiProvider()
+        if cls._gemini_provider.is_available():
+            return cls._gemini_provider
+
+        # 2. Ollama
         if cls._ollama_provider is None:
             cls._ollama_provider = OllamaProvider()
         if cls._ollama_provider.is_available():
             return cls._ollama_provider
 
+        # 3. LlamaCpp
         if cls._llama_provider is None:
             cls._llama_provider = LlamaCppProvider()
         if cls._llama_provider.is_available():
             return cls._llama_provider
 
+        # 4. Local Smart Generator
         if cls._smart_generator is None:
             cls._smart_generator = LocalSmartGenerator()
         return cls._smart_generator
 
     @classmethod
     def generate(cls, prompt, context=None, **kwargs):
-        # 1. Try Ollama if available
+        # 1. Try Cloud Free Gemini API if configured and not running unit tests
+        if not os.getenv("TESTING"):
+            if cls._gemini_provider is None:
+                cls._gemini_provider = GeminiProvider()
+            if cls._gemini_provider.is_available():
+                try:
+                    res = cls._gemini_provider.generate(prompt, context=context, **kwargs)
+                    if res and len(res.strip()) > 15:
+                        return res.strip()
+                except Exception:
+                    pass
+
+        # 2. Try Ollama if available
         if cls._ollama_provider is None:
             cls._ollama_provider = OllamaProvider()
         if cls._ollama_provider.is_available():
@@ -599,7 +731,7 @@ class LocalLLM:
             except Exception:
                 pass
 
-        # 2. Try LlamaCpp if available
+        # 3. Try LlamaCpp if available
         if cls._llama_provider is None:
             cls._llama_provider = LlamaCppProvider()
         if cls._llama_provider.is_available():
@@ -610,7 +742,7 @@ class LocalLLM:
             except Exception:
                 pass
 
-        # 3. Always fallback to LocalSmartGenerator
+        # 4. Always fallback to LocalSmartGenerator
         if cls._smart_generator is None:
             cls._smart_generator = LocalSmartGenerator()
         return cls._smart_generator.generate(prompt, context=context, **kwargs)
